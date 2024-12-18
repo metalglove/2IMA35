@@ -4,7 +4,7 @@ import math
 
 # boruvka's algorithm
 
-def node_index(i, j):
+def edge_index(i, j):
     if i > j:
         return (i, j)
     return (j, i)
@@ -26,70 +26,91 @@ class Graph:
 
     def add_edge(self, i, j, w):
         if i in self.V.keys() and j in self.V.keys():
-            edge = node_index(i, j)
+            edge = edge_index(i, j)
             self.E[edge] = w
             self.V[i].append(j)
             self.V[j].append(i)
 
     def remove_edge(self, i, j):
         if i in self.V.keys() and j in self.V.keys():
-            edge = node_index(i, j)
-            if edge in self.E:
-                del self.E[edge]
-                self.V[i].remove(j)
-                self.V[j].remove(i)
+            edge = edge_index(i, j)
+            del self.E[edge]
+            self.V[i].remove(j)
+            self.V[j].remove(i)
 
-    def construct_components(self, VPrime, NGPrime, NGPrimeEdges):
-        flat_map = lambda xs: [y for xy in xs for y in xy]
-        prime_edges = set(flat_map(NGPrimeEdges.values()))
-        leader_edges = set([(u, v) for (u, v) in prime_edges if u in VPrime and v in VPrime])
-        reduced_edges = set(self.E.keys()) - prime_edges
-        edges_outside_components = set(reduced_edges) | leader_edges
+    def update_edge(self, a, b):
+        # add an edge if it doesn't already exist
+        # if it does already exist, check whether the weight needs to be updated (from a to b)
 
-        # removing unnessacery edges.
-        edges_to_remove = set(self.E.keys()) - edges_outside_components
-        for (i, j) in edges_to_remove:
+        if a == b:
+            return
+        if a not in self.E:
+            return
+
+        (i, j) = a
+        wa = self.E[a]
+        if b in self.E:
+            self.E[b] = min(wa, self.E[b])
             self.remove_edge(i, j)
-
-        # NOTE: dumbest thing ever to remove edges that are in the reduced edges set
-        # which are not in the prime edges set but in a component
-        for (u, v) in reduced_edges:
-            if u not in VPrime and v not in VPrime:
-                for prime in NGPrime.values():
-                    b = set([u, v])
-                    a = set(prime) - b 
-                    if len(prime) - 2 == len(a):
-                        edges_outside_components.remove((u, v))
-                        continue
-            elif (u, v) not in prime_edges:
-                edges_outside_components.remove((u, v))
-
-        # WIP: need to figure out how to filter the edges such that only the edges
-        # outside of the components remain. Then, we can check per component which
-        # edges we need to keep.
-        # It is also important to create/update edges for the ones between components
-        # as the leaders will then be connected with the minimum edge weight connecting
-        # the components.
-        # Next, we need to remove all vertices that are no longer used.
+        else:
+            self.remove_edge(i, j)
+            (i, j) = b
+            self.add_edge(i, j, wa)
 
 
-        # all vertices have the same leader will be one component
-        for (leader, neighborhood) in NGPrime.items():
-            for i in neighborhood:
-                for (u, v) in edges_outside_components:
-                    if u == i or v == i:
-                        pass
-                
-        # check G.V for empty vertex list -> remove the vertex
+    def clean_vertices(self):
+        self.V = {k: v for k, v in self.V.items() if len(v) > 0}
 
-            
-            
+    def construct_components(self, VPrime, NGPrime):
+        # VPrime -> Leader Vertices
+        # NGPrime -> All nodes in a component (all vertices that should be collapsed to one vertex)
+
+        # NGPrime[2] = {1, 2, 3, 6} -> 2 is the leader, so all remaining vertices should collapse to 2.
+        # all edges that are inside that component should be deleted. ALL edges that are bridging THIS
+        # component to another, have to be tracked such that we can find the minimum cost to bridge the
+        # components.
 
         # delete non-leader vertices and edges of each component
         # for multiple edges that have the same leaders, choose one with minimum weight
         # all edges leaving each component will be incident to the leader of the component
         # return the contracte graph
-        pass
+
+        # alternative idea:
+        # create a completely new graph G2 with (V2 and E2)
+        # for every key in ngprime: create a new vertex where i = key and add it to G2
+        # create a n*n table where n = |V2|. Set all values in here to inf
+        # loop over all edges in G:
+        #   determine using NGPrime if the edge is trans-cluster.
+        #   if it's a trans-cluster edge, compare its weight to table[i][j]. make sure that there's no redundancy with table[j][i] (check for largest)
+        #   if this weight is smaller than table[i][j], set table[i][j] to the weight of the current edge. else, nothing
+        # loop over all i and j indicies:
+        #   check if the value of table[i][j] is not equal to inf
+        #   if so, create an edge from vertex i to vertex j in G2. else, nothing
+
+
+        # collapse vertices to their leader
+        for vp in VPrime:
+            neighborhood = NGPrime[vp]
+
+            # find edges of each vertex in the neighborhood
+            edges = set([edge_index(u,v)  for v in neighborhood for u in self.V[v]])
+
+            # filter edges that are going out of the component
+            for (u, v) in edges:
+                edge = (u, v)
+                if u not in neighborhood or v not in neighborhood:
+                    if u in neighborhood:
+                        u = vp
+                    else:
+                        v = vp
+                    # update an edge bridging the components to their leader vertex
+                    self.update_edge(edge, edge_index(u, v))
+                else:
+                    # remove edge
+                    self.remove_edge(u, v)
+
+        # remove vertices that are in the neighborhood
+        self.clean_vertices()
 
 
 class BoruvkasAlgorithmSingleMachine:
@@ -104,8 +125,8 @@ class BoruvkasAlgorithmSingleMachine:
 
     def __contraction(self, L):
         NGPrime = dict()
-        NGPrimeEdges = dict()
         VPrime = list()
+
         for u in self.G.V:
             c = u
             v = u
@@ -115,20 +136,27 @@ class BoruvkasAlgorithmSingleMachine:
                 s = set(s).union([v])
                 c = v
                 v_ = L[v]
-                e = node_index(v_, v)
+                e = edge_index(v_, v)
                 v = v_
                 E.append(e)
             c = min(c, v)
+            # if c is a leader (c in V')
             if c in VPrime:
+                # update the vertices in the neighborhood of c
                 NGPrime[c] = set(NGPrime[c]).union(s)
-                NGPrimeEdges[c] = set(NGPrimeEdges[c]).union(E)
             else:
                 VPrime = set(VPrime).union([c])
                 NGPrime[c] = set([c]).union(s)
-                NGPrimeEdges[c] = set(E)
-        print("hi")
-        self.G.construct_components(VPrime, NGPrime, NGPrimeEdges)
-        return self.G
+
+        if len(NGPrime.keys()) == 1:
+            k = next(iter(NGPrime))
+            self.G.E = dict()
+            self.G.V = dict({k: []})
+            print(f"final vertex found: {k, NGPrime[k]}")
+            return
+
+        print("neighborhoods: " + str([f"{ng} " for ng in NGPrime.items()]))
+        self.G.construct_components(VPrime, NGPrime)
 
     def __find_nearest_neighbors(self):
         L = dict()
@@ -138,7 +166,7 @@ class BoruvkasAlgorithmSingleMachine:
             for j in self.G.V[u]:
                 if u == j:
                     continue
-                edge_weight = self.G.E[node_index(u, j)]
+                edge_weight = self.G.E[edge_index(u, j)]
                 if edge_weight <= min_weight:
                     min_weight = edge_weight
                     best_vertex = j
@@ -146,16 +174,21 @@ class BoruvkasAlgorithmSingleMachine:
         return L
 
     def run(self):
+        print("running boruvkas algorithm:")
         self.__reset()
         i = 0
         L = dict()
         for v in self.G.V:
             L[i] = self.__find_nearest_neighbors()
-            self.G = self.__contraction(L[i])
+            self.__contraction(L[i])
             i = i + 1
-            if len(self.V) <= 1:
+            self.__print(i)
+            if len(self.G.V) <= 1:
                 break
         return self.G
+
+    def __print(self, i):
+        print(f"round: {i} \n\tvertices:" + str([f"{v} " for v in self.G.V.items()]) +"\n\tedges:" + str([f"{e} " for e in self.G.E.items()]))
 
 def main():
     G = Graph()
