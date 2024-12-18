@@ -112,11 +112,11 @@ class Graph:
         # remove vertices that are in the neighborhood
         self.clean_vertices()
 
-
-class BoruvkasAlgorithmSingleMachine:
-    def __init__(self, G: Graph):
+class BoruvkasAlgorithm:
+    def __init__(self, G: Graph, max_iterations):
         self.__G = G
         self.__reset()
+        self.max_iterations = max_iterations
 
     def __reset(self):
         self.i = 0
@@ -125,7 +125,7 @@ class BoruvkasAlgorithmSingleMachine:
 
     def __contraction(self, L):
         NGPrime = dict()
-        VPrime = list()
+        VPrime = set()
 
         for u in self.G.V:
             c = u
@@ -145,14 +145,16 @@ class BoruvkasAlgorithmSingleMachine:
                 # update the vertices in the neighborhood of c
                 NGPrime[c] = set(NGPrime[c]).union(s)
             else:
+                # otherwise, add to the neighborhood and V'
                 VPrime = set(VPrime).union([c])
                 NGPrime[c] = set([c]).union(s)
 
+        # we have finished clustering to a single vertex.
         if len(NGPrime.keys()) == 1:
             k = next(iter(NGPrime))
             self.G.E = dict()
             self.G.V = dict({k: []})
-            print(f"final vertex found: {k, NGPrime[k]}")
+            print(f"final neighborhood: {k, NGPrime[k]}")
             return
 
         print("neighborhoods: " + str([f"{ng} " for ng in NGPrime.items()]))
@@ -174,21 +176,81 @@ class BoruvkasAlgorithmSingleMachine:
         return L
 
     def run(self):
-        print("running boruvkas algorithm:")
+        print(f"running boruvkas algorithm: max_iterations = {self.max_iterations}\nGraph:")
+        self.__print_graph()
         self.__reset()
-        i = 0
         L = dict()
-        for v in self.G.V:
+        for i in range(1, self.max_iterations + 1):
+            print(f"round {i}")
             L[i] = self.__find_nearest_neighbors()
             self.__contraction(L[i])
-            i = i + 1
-            self.__print(i)
+            self.__print_graph()
             if len(self.G.V) <= 1:
                 break
         return self.G
 
-    def __print(self, i):
-        print(f"round: {i} \n\tvertices:" + str([f"{v} " for v in self.G.V.items()]) +"\n\tedges:" + str([f"{e} " for e in self.G.E.items()]))
+    def __print_graph(self):
+        print(f"\tvertices:" + str([f"{v} " for v in self.G.V.items()]) +"\n\tedges:" + str([f"{e} " for e in self.G.E.items()]))
+
+class BoruvkasAlgorithmSingleMachine:
+    def __init__(self, buckets, max_iterations, prob):
+        self.buckets = buckets
+        self.max_iterations = max_iterations
+        self.prob = prob
+
+    def contraction(self):
+        # Input: the graph G(V,E) and the mapping Lambda
+        # Let G'(V', E') be an empty graph;
+        # for each vertex u in G do
+        #   Let c = u, v = u, and S = phi;
+        #   while v not in S do
+        #       Let S = S union {v}, c = v and v = Lambda(v);
+        #   end while
+        #   Let c = min(c, v);
+        #   if c in V' then
+        #       Let Ng'(c) = Ng'(c) union Ng(u);
+        #   else
+        #       Let V' = V' union {c} and Ng'(c) = Ng(u);
+        pass
+
+    def map_contract_graph(self, _lambda, leader):
+        pass
+
+    def reduce_contract_graph(self, leader):
+        pass
+
+    def find_best_neighbours(self, adj):
+        # Input: the grph G(V, E)
+        # for each vertex u in G do
+        #   if NG(u) = phi then
+        #       Let Lambda(u) = u
+        #   else
+        #       Let Lambda(u) be the vertex v in N(u) whose weight is minimum;
+        # end for
+        # Output: For each vertex u in V, we return the mapping Lambda(u)
+
+        pass
+
+    def create_buckets(self, E, alpha, beta, W):
+        pass
+
+    def shift_edge_weights(self, E, gamma=0.05):
+        pass
+
+    def find_differences(self, contracted_leader_list):
+        pass
+
+    def run(self, G):
+        # let i = 0 let leader(v) for each vertex v in V
+        # repeat
+        #   invoke FindNearestNeighbors(G(V, E)) that returns the mapping lambda: V -> V
+        #   invoke Contractions(G(V, E)) that returns a graph G'(V', E'))
+        #   let G(V, E) = G'(V', E')
+        #   lambda_i = lambda
+        #   i = i + 1
+        # until |V| = 1
+        # return a minimum spanning tree T of G(V, E)
+        pass
 
 def main():
     G = Graph()
@@ -240,7 +302,7 @@ def main():
     # G.add_edge(9, 10, 1)
     # G.add_edge(10, 1, 2)
 
-    alg = BoruvkasAlgorithmSingleMachine(G)
+    alg = BoruvkasAlgorithm(G, 10)
     alg.run()
 
 if __name__ == "__main__":
