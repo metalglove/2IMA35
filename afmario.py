@@ -95,7 +95,7 @@ class Graph:
             neighborhood = NGPrime[vp]
 
             # find edges of each vertex in the neighborhood
-            edges = set([edge_index(u,v)  for v in neighborhood for u in self.V[v]])
+            edges = set([edge_index(u,v) for v in neighborhood for u in self.V[v]])
 
             # filter edges that are going out of the component
             for (u, v) in edges:
@@ -194,27 +194,25 @@ class BoruvkasAlgorithm:
     def __print_graph(self):
         print(f"\tvertices:" + str([f"{v} " for v in self.G.V.items()]) +"\n\tedges:" + str([f"{e} " for e in self.G.E.items()]))
 
+from operator import concat
+
 class BoruvkasAlgorithmSingleMachine:
     def __init__(self, max_iterations):
         self.max_iterations = max_iterations
         self.conf = SparkConf().setAppName('BoruvkaSingleMachine_MST')
         self.sc = SparkContext.getOrCreate(conf=self.conf)
 
-    def __contraction(self, V, E, L):
+    def __contraction(self, V: dict[list], E, L):
         NGPrime = dict()
         VPrime = set()
-        for u in V:
+        for u in V.keys():
             c = u
             v = u
             s = list()
-            E = list()
             while v not in s:
                 s = set(s).union([v])
                 c = v
-                v_ = L[v]
-                e = edge_index(v_, v)
-                v = v_
-                E.append(e)
+                v =  L[v]
             c = min(c, v)
             # if c is a leader (c in V')
             if c in VPrime:
@@ -235,35 +233,116 @@ class BoruvkasAlgorithmSingleMachine:
 
         print("neighborhoods: " + str([f"{ng} " for ng in NGPrime.items()]))
 
-        def contract_neighborhoods(ng, E):
-            (leader, ng) = ng
-            print("neighborhood: " + str(ng))
+        def find_edges_in_and_out_of_neighborhood(leader, ng, E):
+            print("find_edges_in_and_out_of_neighborhood: " + str(leader) + str(ng))
 
             edges_in_neighborhood = dict()
             edges_going_out_neighborhood = dict()
             for (i, j) in E.keys():
+                if i not in ng and j not in ng:
+                    continue
                 if i in ng and j in ng:
                     edges_in_neighborhood[(i, j)] = E[(i, j)]
-                elif (i in ng and j not in ng) or (i not in ng or j in ng):
-                    edges_going_out_neighborhood[(i, j)] = E[(i, j)]
-            
-            # WIP: emit edges going out 
+                    continue
 
-            # delete non-leader vertices and edges of each component
-            # for multiple edges that have the same leaders, choose one with minimum weight
-            # all edges leaving each component will be incident to the leader of the component
-            # return the contracted graph
+                wa = E[(i, j)]
+                wb = math.inf
+                if (i in ng and j not in ng):
+                    edge = edge_index(leader, j)
+                else: #(i not in ng or j in ng):
+                    edge = edge_index(i, leader)
+                
+                if edge in edges_going_out_neighborhood:
+                    wb = edges_going_out_neighborhood[edge]
+                edges_going_out_neighborhood[edge] = min(wa, wb)
 
-            pass
+            print("\tin: " + str([f"{e} " for e in edges_in_neighborhood.items()]))
+            print("\tout: " + str([f"{e} " for e in edges_going_out_neighborhood.items()]))
 
+            # we emit the edges the edges that are in and out the neighborhood for the leader
+            return set([leader]), edges_in_neighborhood, edges_going_out_neighborhood, {leader: ng}
+
+        def find_edges_out_of_neighborhood(leader, ng, E):
+            print("find_edges_out_of_neighborhood: " + str(leader) + str(ng))
+
+            edges_going_out_neighborhood = dict()
+            connected_vertices = set()
+
+            for (i, j) in E.keys():
+                if (i not in ng and j not in ng) or (i in ng and j in ng):
+                    continue
+
+                wa = E[(i, j)]
+                wb = math.inf
+                if (i in ng and j not in ng):
+                    edge = edge_index(leader, j)
+                    connected_vertices = set(connected_vertices).union({j})
+                else: #(i not in ng or j in ng):
+                    edge = edge_index(i, leader)
+                    connected_vertices = set(connected_vertices).union({i})
+                
+                if edge in edges_going_out_neighborhood:
+                    wb = edges_going_out_neighborhood[edge]
+                edges_going_out_neighborhood[edge] = min(wa, wb)
+
+            print("\tout: " + str([f"{e} " for e in edges_going_out_neighborhood.items()]))
+
+            # we emit the edges the edges that are in and out the neighborhood for the leader
+            return set([leader]), edges_going_out_neighborhood, {leader: connected_vertices}
+
+        def reduce_contraction(x, y):
+            leaders = x[0] | y[0]
+            edges_out = x[1] | y[1]
+            connected_vertices = x[2] | y[2]
+            edges_out2 = edges_out.copy()
+
+            def find_key(i):
+                for key, val in connected_vertices.items():
+                    if i in val:
+                        return key
+
+                return -1
+                # k = [key for key, val in connected_vertices.items() if i in val][0]
+
+            for l in leaders:
+                edges_out = edges_out2.copy()
+                for (i, j), w in edges_out.items():
+                    # if both of the vertices are leaders, continue
+                    if (i == l and j in leaders) or (j == l and i in leaders):
+                        continue
+                    wb = math.inf
+                    if (i == l):
+                        k = find_key(j)
+                        edge = edge_index(i, k)
+                    else: #(i not in ng or j in ng):
+                        k = find_key(i)
+                        edge = edge_index(j, k)
+                    
+                    # the leader for k has not yet been added to the connected vertices dict.
+                    if k == -1:
+                        continue
+
+                    if edge in edges_out2:
+                        wb = edges_out2[edge]
+
+                    del edges_out2[(i, j)]
+                    edges_out2[edge] = min(w, wb)
+
+            return leaders, edges_out2, connected_vertices
+        
         # map each neighborhood to contract their edges
-        edges_that_cross_neighborhoods = self.sc.parallelize(NGPrime).map(lambda ng: contract_neighborhoods(ng, E)).collect()
+        (V, E, _) = self.sc.parallelize(NGPrime) \
+            .map(lambda leader: find_edges_out_of_neighborhood(leader, NGPrime[leader], E)) \
+            .reduce(reduce_contraction)
+            # .map(lambda leader: find_edges_in_and_out_of_neighborhood(leader, NGPrime[leader], E)) \
+
+        return V, E
 
     def __find_best_neighbors(self, V, E):
-        def find_best_neighbor(x):
+        def find_best_neighbor(x, vertices_it_connects_to):
             min_weight = math.inf
             best_vertex = x
-            for j in V[x]:
+            for j in vertices_it_connects_to:
                 if x == j:
                     continue
                 edge_weight = E[edge_index(x, j)]
@@ -272,7 +351,9 @@ class BoruvkasAlgorithmSingleMachine:
                     best_vertex = j
 
             return x, best_vertex
-        return dict(self.sc.parallelize(V).map(find_best_neighbor).collect())
+        return dict(self.sc.parallelize(V.keys()) \
+                .map(lambda k: find_best_neighbor(k, V[k])) \
+                .collect())
 
         # Input: the graph G(V, E)
         # for each vertex u in G do
@@ -293,7 +374,7 @@ class BoruvkasAlgorithmSingleMachine:
             # find the nearest neighbor of each vertex
             L[i] = self.__find_best_neighbors(V, E)
             # contract the graph
-            V, E = self.__contraction(V, E, L)
+            V, E = self.__contraction(V, E, L[i])
             
 
 
