@@ -1,4 +1,6 @@
 import math
+from pyspark import SparkConf, SparkContext
+
 # assumptions:
 # - dataset has edges from all vertices to all vertices
 
@@ -193,34 +195,77 @@ class BoruvkasAlgorithm:
         print(f"\tvertices:" + str([f"{v} " for v in self.G.V.items()]) +"\n\tedges:" + str([f"{e} " for e in self.G.E.items()]))
 
 class BoruvkasAlgorithmSingleMachine:
-    def __init__(self, buckets, max_iterations, prob):
-        self.buckets = buckets
+    def __init__(self, max_iterations):
         self.max_iterations = max_iterations
-        self.prob = prob
+        self.conf = SparkConf().setAppName('BoruvkaSingleMachine_MST')
+        self.sc = SparkContext.getOrCreate(conf=self.conf)
 
-    def contraction(self):
-        # Input: the graph G(V,E) and the mapping Lambda
-        # Let G'(V', E') be an empty graph;
-        # for each vertex u in G do
-        #   Let c = u, v = u, and S = phi;
-        #   while v not in S do
-        #       Let S = S union {v}, c = v and v = Lambda(v);
-        #   end while
-        #   Let c = min(c, v);
-        #   if c in V' then
-        #       Let Ng'(c) = Ng'(c) union Ng(u);
-        #   else
-        #       Let V' = V' union {c} and Ng'(c) = Ng(u);
-        pass
+    def __contraction(self, V, E, L):
+        NGPrime = dict()
+        VPrime = set()
+        for u in V:
+            c = u
+            v = u
+            s = list()
+            E = list()
+            while v not in s:
+                s = set(s).union([v])
+                c = v
+                v_ = L[v]
+                e = edge_index(v_, v)
+                v = v_
+                E.append(e)
+            c = min(c, v)
+            # if c is a leader (c in V')
+            if c in VPrime:
+                # update the vertices in the neighborhood of c
+                NGPrime[c] = set(NGPrime[c]).union(s)
+            else:
+                # otherwise, add to the neighborhood and V'
+                VPrime = set(VPrime).union([c])
+                NGPrime[c] = set([c]).union(s)
 
-    def map_contract_graph(self, _lambda, leader):
-        pass
+        # we have finished clustering to a single vertex.
+        if len(NGPrime.keys()) == 1:
+            k = next(iter(NGPrime))
+            E = dict()
+            V = dict({k: []})
+            print(f"final neighborhood: {k, NGPrime[k]}")
+            return V, E
 
-    def reduce_contract_graph(self, leader):
-        pass
+        print("neighborhoods: " + str([f"{ng} " for ng in NGPrime.items()]))
 
-    def find_best_neighbours(self, adj):
-        # Input: the grph G(V, E)
+        def contract_neighborhoods(ng, E):
+            (leader, ng) = ng
+            print("neighborhood: " + str(ng))
+            for v in ng:
+                pass
+            # delete non-leader vertices and edges of each component
+            # for multiple edges that have the same leaders, choose one with minimum weight
+            # all edges leaving each component will be incident to the leader of the component
+            # return the contracted graph
+
+            pass
+
+        # map each neighborhood to contract their edges
+        return self.sc.parallelize(NGPrime).map(lambda ng: contract_neighborhoods(ng, E)).collect()
+
+    def __find_best_neighbors(self, V, E):
+        def find_best_neighbor(x):
+            min_weight = math.inf
+            best_vertex = x
+            for j in V[x]:
+                if x == j:
+                    continue
+                edge_weight = E[edge_index(x, j)]
+                if edge_weight <= min_weight:
+                    min_weight = edge_weight
+                    best_vertex = j
+
+            return x, best_vertex
+        return dict(self.sc.parallelize(V).map(find_best_neighbor).collect())
+
+        # Input: the graph G(V, E)
         # for each vertex u in G do
         #   if NG(u) = phi then
         #       Let Lambda(u) = u
@@ -229,18 +274,23 @@ class BoruvkasAlgorithmSingleMachine:
         # end for
         # Output: For each vertex u in V, we return the mapping Lambda(u)
 
-        pass
+        
 
-    def create_buckets(self, E, alpha, beta, W):
-        pass
+    def run(self, V, E):
+        L = dict()
+        n = len(V)
 
-    def shift_edge_weights(self, E, gamma=0.05):
-        pass
+        for i in range(1, self.max_iterations + 1):
+            # find the nearest neighbor of each vertex
+            L[i] = self.__find_best_neighbors(V, E)
+            # contract the graph
+            V, E = self.__contraction(V, E, L)
+            
 
-    def find_differences(self, contracted_leader_list):
-        pass
 
-    def run(self, G):
+        #rdd = sc.parallelize(adj)
+
+
         # let i = 0 let leader(v) for each vertex v in V
         # repeat
         #   invoke FindNearestNeighbors(G(V, E)) that returns the mapping lambda: V -> V
@@ -301,9 +351,10 @@ def main():
     # G.add_edge(6, 9, 2)
     # G.add_edge(9, 10, 1)
     # G.add_edge(10, 1, 2)
-
-    alg = BoruvkasAlgorithm(G, 10)
-    alg.run()
+    max_iterations = 10
+    # alg = BoruvkasAlgorithm(G, max_iterations)
+    alg = BoruvkasAlgorithmSingleMachine(max_iterations)
+    alg.run(G.V, G.E)
 
 if __name__ == "__main__":
     main()
