@@ -238,8 +238,17 @@ class BoruvkasAlgorithmSingleMachine:
         def contract_neighborhoods(ng, E):
             (leader, ng) = ng
             print("neighborhood: " + str(ng))
-            for v in ng:
-                pass
+
+            edges_in_neighborhood = dict()
+            edges_going_out_neighborhood = dict()
+            for (i, j) in E.keys():
+                if i in ng and j in ng:
+                    edges_in_neighborhood[(i, j)] = E[(i, j)]
+                elif (i in ng and j not in ng) or (i not in ng or j in ng):
+                    edges_going_out_neighborhood[(i, j)] = E[(i, j)]
+            
+            # WIP: emit edges going out 
+
             # delete non-leader vertices and edges of each component
             # for multiple edges that have the same leaders, choose one with minimum weight
             # all edges leaving each component will be incident to the leader of the component
@@ -248,7 +257,7 @@ class BoruvkasAlgorithmSingleMachine:
             pass
 
         # map each neighborhood to contract their edges
-        return self.sc.parallelize(NGPrime).map(lambda ng: contract_neighborhoods(ng, E)).collect()
+        edges_that_cross_neighborhoods = self.sc.parallelize(NGPrime).map(lambda ng: contract_neighborhoods(ng, E)).collect()
 
     def __find_best_neighbors(self, V, E):
         def find_best_neighbor(x):
