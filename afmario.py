@@ -354,6 +354,10 @@ class BoruvkasAlgorithmSingleMachine:
     def run(self, V, E):
         L = dict()
         n = len(V)
+        Vs = dict()
+        Es = dict()
+        Vs[0] = V
+        Es[0] = V
         if self.max_iterations > n:
             print(f"max_iterations > len(V): {self.max_iterations} > {n}")
             return
@@ -365,11 +369,12 @@ class BoruvkasAlgorithmSingleMachine:
             L[i] = self.__find_best_neighbors(V, E)
             # contract the graph
             V, E = self.__contraction(V, E, L[i])
-
+            Vs[i] = V
+            Es[i] = E
             if len(V) == 1:
                 break
 
-
+        return L, Vs, Es
         # let i = 0 let leader(v) for each vertex v in V
         # repeat
         #   invoke FindNearestNeighbors(G(V, E)) that returns the mapping lambda: V -> V
