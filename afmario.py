@@ -194,7 +194,6 @@ class BoruvkasAlgorithm:
     def __print_graph(self):
         print(f"\tvertices:" + str([f"{v} " for v in self.G.V.items()]) +"\n\tedges:" + str([f"{e} " for e in self.G.E.items()]))
 
-from operator import concat
 
 class BoruvkasAlgorithmSingleMachine:
     def __init__(self, max_iterations):
@@ -263,7 +262,7 @@ class BoruvkasAlgorithmSingleMachine:
             return set([leader]), edges_in_neighborhood, edges_going_out_neighborhood, {leader: ng}
 
         def find_edges_out_of_neighborhood(leader, ng, E):
-            print("find_edges_out_of_neighborhood: " + str(leader) + str(ng))
+            print(f"find_edges_out_of_neighborhood: {str(leader)}: {str(ng)}")
 
             edges_going_out_neighborhood = dict()
             connected_vertices = set()
@@ -287,17 +286,38 @@ class BoruvkasAlgorithmSingleMachine:
 
             print("\tout: " + str([f"{e} " for e in edges_going_out_neighborhood.items()]))
 
-            # we emit the edges the edges that are in and out the neighborhood for the leader
-            return set([leader]), edges_going_out_neighborhood, {leader: connected_vertices}
+            # we emit the edges the edges that are out the neighborhood for the leader
+            return {leader: connected_vertices}, edges_going_out_neighborhood
+
+        def find_edges_out_of_neighborhood2(leader, ng, E):
+            print(f"find_edges_out_of_neighborhood2: {str(leader)}: {str(ng)}")
+
+            edges_going_out_neighborhood = dict()
+            connected_vertices = set()
+
+            for (i, j) in E.keys():
+                if (i not in ng and j not in ng) or (i in ng and j in ng):
+                    continue
+
+                if (i in ng and j not in ng):
+                    connected_vertices = set(connected_vertices).union({j})
+                else: #(i not in ng or j in ng):
+                    connected_vertices = set(connected_vertices).union({i})
+                
+                edges_going_out_neighborhood[(i, j)] = E[(i, j)]
+
+            print("\tout: " + str([f"{e} " for e in edges_going_out_neighborhood.items()]))
+
+            # we emit the edges the edges that are out the neighborhood for the leader
+            return {leader: connected_vertices}, edges_going_out_neighborhood
 
         def reduce_contraction(x, y):
             leaders = x[0] | y[0]
             edges_out = x[1] | y[1]
-            connected_vertices = x[2] | y[2]
             edges_out2 = edges_out.copy()
 
             def find_key(i):
-                for key, val in connected_vertices.items():
+                for key, val in leaders.items():
                     if i in val:
                         return key
 
@@ -328,14 +348,94 @@ class BoruvkasAlgorithmSingleMachine:
                     del edges_out2[(i, j)]
                     edges_out2[edge] = min(w, wb)
 
-            return leaders, edges_out2, connected_vertices
+            return leaders, edges_out2
         
+        def reduce_neighborhood_edges(x, y):
+            leaders = x[0] | y[0]
+            edges_out = x[1] | y[1]
+            return leaders, edges_out
+
         # map each neighborhood to contract their edges
-        (V, E, _) = self.sc.parallelize(NGPrime) \
+        (V, E) = self.sc.parallelize(NGPrime) \
             .map(lambda leader: find_edges_out_of_neighborhood(leader, NGPrime[leader], E)) \
-            .reduce(reduce_contraction)
+            .reduce(reduce_neighborhood_edges)
+            # .reduce(reduce_contraction)
+            # .map(lambda leader: find_edges_out_of_neighborhood2(leader, NGPrime[leader], E)) \
             # .map(lambda leader: find_edges_in_and_out_of_neighborhood(leader, NGPrime[leader], E)) \
 
+        # EE = E.copy()
+
+        def add_edge(i, j, w):
+            edge = edge_index(i, j)
+            E[edge] = w
+            V[i] = V[i].union({j})
+            V[j] = V[j].union({i})
+                
+
+        def remove_edge(i, j):
+            edge = edge_index(i, j)
+            del E[edge]
+            if i in V:
+                V[i] = V[i].difference({j})
+            if j in V:
+                V[j] = V[j].difference({i})
+                
+
+        def update_edge(a, b):
+            # add an edge if it doesn't already exist
+            # if it does already exist, check whether the weight needs to be updated (from a to b)
+
+            if a == b:
+                return
+            if a not in E:
+                return
+
+            (i, j) = a
+            wa = E[a]
+            if b in E:
+                E[b] = min(wa, E[b])
+                remove_edge(i, j)
+            else:
+                remove_edge(i, j)
+                (i, j) = b
+                add_edge(i, j, wa)
+
+        def find_key(i):
+            for key, val in NGPrime.items():
+                if i in val:
+                    return key
+
+            return -1
+        
+        # update edges to be their leaders
+        for (i, j) in list(E.keys()): 
+            kp = find_key(i)
+            lp = find_key(j)
+            update_edge((i, j), edge_index(kp, lp))
+                
+
+
+        # for vp in VPrime:
+        #     neighborhood = NGPrime[vp]
+
+        #     # find edges of each vertex in the neighborhood
+        #     edges = set([edge_index(u,v) for v in neighborhood for u in V[v]])
+        #     # edges = set([edge_index(u, vp) for u in V_[vp]])
+
+        #     # filter edges that are going out of the component
+        #     for (u, v) in edges:
+        #         edge = (u, v)
+        #         if u not in neighborhood or v not in neighborhood:
+        #             if u in neighborhood:
+        #                 u = vp
+        #             else:
+        #                 v = vp
+        #             # update an edge bridging the components to their leader vertex
+        #             update_edge(edge, edge_index(u, v))
+        #         else:
+        #             # remove edge
+        #             remove_edge(u, v)
+                
         return V, E
 
     def __find_best_neighbors(self, V, E):
@@ -369,17 +469,19 @@ class BoruvkasAlgorithmSingleMachine:
     def run(self, V, E):
         L = dict()
         n = len(V)
+        if self.max_iterations > n:
+            print(f"max_iterations > len(V): {self.max_iterations} > {n}")
+            return
 
         for i in range(1, self.max_iterations + 1):
             # find the nearest neighbor of each vertex
             L[i] = self.__find_best_neighbors(V, E)
             # contract the graph
             V, E = self.__contraction(V, E, L[i])
+
+            if len(V) == 1:
+                break
             
-
-
-        #rdd = sc.parallelize(adj)
-
 
         # let i = 0 let leader(v) for each vertex v in V
         # repeat
@@ -390,7 +492,6 @@ class BoruvkasAlgorithmSingleMachine:
         #   i = i + 1
         # until |V| = 1
         # return a minimum spanning tree T of G(V, E)
-        pass
 
 def main():
     G = Graph()
