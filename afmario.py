@@ -177,9 +177,10 @@ class BoruvkasAlgorithm:
             L[u] = best_vertex
         return L
 
-    def run(self):
+    def run(self, print_graph = False):
         print(f"running boruvkas algorithm: max_iterations = {self.max_iterations}\nGraph:")
-        self.__print_graph()
+        if print_graph:
+            self.__print_graph()
         self.__reset()
         L = dict()
         Vs = dict()
@@ -192,7 +193,8 @@ class BoruvkasAlgorithm:
             self.__contraction(L[i])
             Vs[i] = self.G.V
             Es[i] = self.G.E
-            self.__print_graph()
+            if print_graph:
+                self.__print_graph()
             if len(self.G.V) <= 1:
                 break
         return L, Vs, Es
