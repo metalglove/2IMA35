@@ -182,14 +182,20 @@ class BoruvkasAlgorithm:
         self.__print_graph()
         self.__reset()
         L = dict()
+        Vs = dict()
+        Es = dict()
+        Vs[0] = self.G.V
+        Es[0] = self.G.E
         for i in range(1, self.max_iterations + 1):
             print(f"round {i}")
             L[i] = self.__find_nearest_neighbors()
             self.__contraction(L[i])
+            Vs[i] = self.G.V
+            Es[i] = self.G.E
             self.__print_graph()
             if len(self.G.V) <= 1:
                 break
-        return self.G
+        return L, Vs, Es
 
     def __print_graph(self):
         print(f"\tvertices:" + str([f"{v} " for v in self.G.V.items()]) +"\n\tedges:" + str([f"{e} " for e in self.G.E.items()]))
