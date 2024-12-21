@@ -46,7 +46,8 @@ class GraphVisualizer:
             for x in component.V:
                 xs.append(self.G.points[x][0])
                 ys.append(self.G.points[x][1])
-            plt.scatter(xs, ys, c=colors[i])
+
+            plt.scatter(xs, ys, color=colors[i])
 
         ax = plt.gca()
         if self.plot_calls == 0:
