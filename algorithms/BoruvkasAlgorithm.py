@@ -1,16 +1,11 @@
+from algorithms.Algorithm import Algorithm
 from algorithms.Graph import Graph, edge_index
 import math
 
-class BoruvkasAlgorithm:
+class BoruvkasAlgorithm(Algorithm):
     def __init__(self, G: Graph, max_iterations):
-        self.__G = G
-        self.__reset()
+        super().__init__(G)
         self.max_iterations = max_iterations
-
-    def __reset(self):
-        self.i = 0
-        self.v = 0
-        self.G = self.__G
 
     def __contraction(self, L):
         NGPrime = dict()
@@ -64,11 +59,11 @@ class BoruvkasAlgorithm:
             L[u] = best_vertex
         return L
 
-    def run(self, print_graph = False):
+    def run(self, print_graph = False, plot_graph = None):
         print(f"running boruvkas algorithm: max_iterations = {self.max_iterations}\nGraph:")
         if print_graph:
-            self.__print_graph()
-        self.__reset()
+            self.print_graph()
+        self.reset()
         L = dict()
         Vs = dict()
         Es = dict()
@@ -81,10 +76,10 @@ class BoruvkasAlgorithm:
             Vs[i] = self.G.V
             Es[i] = self.G.E
             if print_graph:
-                self.__print_graph()
+                self.print_graph()
+            if plot_graph is not None:
+                plot_graph(i)
             if len(self.G.V) <= 1:
                 break
         return L, Vs, Es
 
-    def __print_graph(self):
-        print(f"\tvertices:" + str([f"{v} " for v in self.G.V.items()]) +"\n\tedges:" + str([f"{e} " for e in self.G.E.items()]))
