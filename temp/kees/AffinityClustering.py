@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 
 from Plotter import *
 from DataReader import *
-from DataModifier import *
+from utils.DataModifier import *
 
 
 def get_clustering_data():
