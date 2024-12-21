@@ -22,7 +22,7 @@ class GraphGenerator(object):
             min_y = min(min_y, v[1])
 
         return min_x, max_x, min_y, max_y
-        
+
     def add_gaussian_noise(self, noise=0.1):
         min_x, max_x, min_y, max_y = self.__find_min_max_x_y()
 
@@ -33,7 +33,7 @@ class GraphGenerator(object):
             self.points.append((x, y))
 
         return self
-    
+
     def add_clustered_noise(self, type='', noise=0.1):
         min_x, max_x, min_y, max_y = self.__find_min_max_x_y()
 
@@ -64,7 +64,60 @@ class GraphGenerator(object):
                 current_y += interval
         else:
             NotImplementedError('%s not implemented' % type)
-        
+
+        return self
+
+    def add_point(self, point) -> Graph:
+        self.points.append(point)
+
+        return self
+
+    def add_points(self, points) -> Graph:
+        for point in points:
+            self.add_point(point)
+
+        return self
+
+    def draw_line(self, start_point, end_point, spacing) -> Graph:
+        end_right = start_point[0] < end_point[0]
+        end_above = start_point[1] < end_point[1]
+
+        current_point = list(start_point)
+        x_vals = []
+        y_vals = []
+
+        x_dist = abs(start_point[0] - end_point[0])
+        y_dist = abs(start_point[1] - end_point[1])
+
+        x_spacing = (x_dist / (x_dist + y_dist)) * spacing
+        y_spacing = (y_dist / (x_dist + y_dist)) * spacing
+
+        if (end_right):
+            while (current_point[0] <= end_point[0]):
+                current_point[0] += x_spacing
+                x_vals.append(current_point[0])
+        else:
+            while (current_point[0] >= end_point[0]):
+                current_point[0] -= x_spacing
+                x_vals.append(current_point[0])
+
+        if (end_above):
+            while (current_point[1] <= end_point[1]):
+                current_point[1] += y_spacing
+                y_vals.append(current_point[1])
+        else:
+            while (current_point[1] >= end_point[1]):
+                current_point[1] -= y_spacing
+                y_vals.append(current_point[1])
+
+        for i in range(max(len(x_vals), len(y_vals))):
+            if (i >= len(x_vals)):
+                self.add_point((current_point[0], y_vals[i]))
+            elif (i >= len(y_vals)):
+                self.add_point((x_vals[i], current_point[1]))
+            else:
+                self.add_point((x_vals[i], y_vals[i]))
+
         return self
 
     def to_graph(self, gen_pair_wise = False, f = None) -> Graph:
@@ -85,11 +138,11 @@ class GraphGenerator(object):
                 for j in G.V:
                     if i == j:
                         continue
-                    
+
                     # if no distance function is provided, we assume euclidean distance
                     if f is None:
                         f = euclidean_distance
-                        
+
                     w = f(G.points[i], G.points[j])
 
                     G.add_edge(i, j, w)
@@ -116,5 +169,5 @@ class GraphGenerator(object):
         # G.og_max_x = max_x
         # G.og_min_y = min_y
         # G.og_max_y = max_y
-        
+
         return G
