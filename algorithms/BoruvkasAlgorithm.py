@@ -4,8 +4,7 @@ import math
 
 class BoruvkasAlgorithm(Algorithm):
     def __init__(self, G: Graph, max_iterations):
-        super().__init__(G)
-        self.max_iterations = max_iterations
+        super().__init__(G, max_iterations)
 
     def __contraction(self, L):
         NGPrime = dict()
