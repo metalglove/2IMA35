@@ -14,6 +14,16 @@ class Graph:
     def add_vertex(self, i):
         self.V[i] = set()
 
+    def remove_vertex(self, i):
+        if i not in self.V.keys():
+            return
+        if len(self.V[i]) > 0:
+            # remove vertex from all edges to that vertex
+            keys = list(self.V[i])
+            for j in range(len(keys)):
+                self.remove_edge(i, keys[j])
+        del self.V[i]
+        
     def add_edge(self, i, j, w):
         if i in self.V.keys() and j in self.V.keys():
             edge = edge_index(i, j)
