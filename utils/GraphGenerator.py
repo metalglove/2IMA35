@@ -121,16 +121,18 @@ class GraphGenerator(object):
         return self
 
     def to_graph(self, gen_pair_wise = False, f = None) -> Graph:
+        def euclidean_distance(p1, p2):
+            return math.ceil(math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2))
+        
         G = Graph()
         G.points = self.points
-        G.distance_function = f
+
+        # if no distance function is provided, we assume euclidean distance
+        G.distance_function = euclidean_distance
 
         # add a vertex for each point (map vertex id to xy data from points list)
         for i in range(len(G.points)):
             G.add_vertex(i)
-
-        def euclidean_distance(p1, p2):
-            return math.ceil(math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2))
 
         if gen_pair_wise:
             # add an edge for each possible point
@@ -139,12 +141,7 @@ class GraphGenerator(object):
                     if i == j:
                         continue
 
-                    # if no distance function is provided, we assume euclidean distance
-                    if f is None:
-                        f = euclidean_distance
-
-                    w = f(G.points[i], G.points[j])
-
+                    w = G.distance_function(G.points[i], G.points[j])
                     G.add_edge(i, j, w)
 
         # add any remaining edges the user already specified (override any generated edges if needed)
@@ -154,20 +151,11 @@ class GraphGenerator(object):
                     (i, j, w) = edge
                 elif len(edge) == 2:
                     (i, j) = edge
-                    if f is None:
-                        f = euclidean_distance
-                    w = f(G.points[i], G.points[j])
+                    w = G.distance_function(G.points[i], G.points[j])
                 else:
                     print(f"edge not a tuple of length 2 or 3: {edge}")
                     continue
 
                 G.add_edge(i, j, w)
-
-        # # useful for visualization later
-        # min_x, max_x, min_y, max_y = self.__find_min_max_x_y()
-        # G.og_min_x = min_x
-        # G.og_max_x = max_x
-        # G.og_min_y = min_y
-        # G.og_max_y = max_y
 
         return G

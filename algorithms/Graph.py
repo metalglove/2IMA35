@@ -4,16 +4,39 @@ def edge_index(i, j):
         return (i, j)
     return (j, i)
 
+class Component(object):
+    def __init__(self, v):
+        self.V = set([v])
+
+    def expand(self, C):
+        self.V = self.V | C.V
+        return self
+    
+    def contains(self, v):
+        return v in self.V
+    
+    def __hash__(self):
+        return hash(frozenset(self.V))   
+
 
 class Graph:
     def __init__(self):
         self.V = dict()
         self.E = dict()
-        self.C = dict()
 
     def add_vertex(self, i):
         self.V[i] = set()
 
+    def remove_vertex(self, i):
+        if i not in self.V.keys():
+            return
+        if len(self.V[i]) > 0:
+            # remove vertex from all edges to that vertex
+            keys = list(self.V[i])
+            for j in range(len(keys)):
+                self.remove_edge(i, keys[j])
+        del self.V[i]
+        
     def add_edge(self, i, j, w):
         if i in self.V.keys() and j in self.V.keys():
             edge = edge_index(i, j)

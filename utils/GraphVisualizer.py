@@ -2,6 +2,8 @@ import numpy as np
 from scipy.spatial import Voronoi
 from matplotlib import pyplot as plt
 
+from algorithms.Graph import Component
+
 
 class GraphVisualizer:
     def __init__(self, G):
@@ -27,6 +29,35 @@ class GraphVisualizer:
             ax.set_ylim(self.ylim)
 
         self.plot_calls = self.plot_calls + 1
+
+
+    def plot_component_graph(self, title = '', ):
+        plt.figure()
+        
+        test = [component for component in self.G.components if type(component) is Component]
+        colors = plt.get_cmap('viridis')(np.linspace(0, 1, len(test)))
+
+        plt.title(title + f": components {len(test)}")
+
+        for i in range(len(test)):
+            component = test[i]
+
+            xs, ys = [], []
+            for x in component.V:
+                xs.append(self.G.points[x][0])
+                ys.append(self.G.points[x][1])
+            plt.scatter(xs, ys, c=colors[i])
+
+        ax = plt.gca()
+        if self.plot_calls == 0:
+            self.xlim = ax.get_xlim()
+            self.ylim = ax.get_ylim()
+        else:
+            ax.set_xlim(self.xlim)
+            ax.set_ylim(self.ylim)
+
+        self.plot_calls = self.plot_calls + 1
+
 
     def plot_kmeans(self, title = '', centroids = None, voronoi = False):
         self.plot_graph(title=title)
