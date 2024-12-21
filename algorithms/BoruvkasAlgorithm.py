@@ -1,5 +1,5 @@
 from algorithms.Graph import Graph, edge_index
-
+import math
 
 class BoruvkasAlgorithm:
     def __init__(self, G: Graph, max_iterations):
