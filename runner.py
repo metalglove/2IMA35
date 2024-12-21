@@ -26,11 +26,10 @@ def boruvkas(name, points):
     # with noise
     G = GraphGenerator(points.copy()) \
         .add_gaussian_noise(0.1) \
-        .add_clustered_noise('circle', 0.1) \
         .to_graph(gen_pair_wise=True)
 
     gv = GraphVisualizer(G, True)
-    gv.plot_graph(f'{name} with noise')
+    gv.plot_graph(f'{name} with gauss noise')
 
     max_iterations = 10
     plot_graph = lambda i: gv.plot_graph(f'{name} boruvkas round {i} (noise)')
@@ -58,11 +57,10 @@ def kmeans(name, points, n_clusters):
     # with noise
     G = GraphGenerator(points.copy()) \
         .add_gaussian_noise(0.1) \
-        .add_clustered_noise('circle', 0.1) \
         .to_graph(gen_pair_wise=True)
 
     gv = GraphVisualizer(G, True)
-    gv.plot_graph(f'{name} with noise')
+    gv.plot_graph(f'{name} with gauss noise')
 
     max_iterations = 10
     plot_graph = lambda i, centroids: gv.plot_kmeans(f'{name} kmeans round {i} (noise)', centroids=centroids, voronoi=True)
@@ -79,7 +77,7 @@ def singlelink(name, points):
     gv = GraphVisualizer(G, True)
     gv.plot_graph(f'{name}')
 
-    max_iterations = len(points) - 1
+    max_iterations = len(points)
     plot_graph = lambda i: gv.plot_component_graph(f'{name} SLAC round {i}')
     alg = SingleLinkAgglomerativeClusteringAlgorithm(G, max_iterations, False, plot_graph)
     alg.run()
@@ -89,21 +87,20 @@ def singlelink(name, points):
     # with noise
     G = GraphGenerator(points.copy()) \
         .add_gaussian_noise(0.1) \
-        .add_clustered_noise('circle', 0.1) \
         .to_graph(gen_pair_wise=True)
 
     gv = GraphVisualizer(G, True)
-    gv.plot_graph(f'{name} with noise')
+    gv.plot_graph(f'{name} with gauss noise')
 
-    max_iterations = len(points) - 1
+    max_iterations = len(points)
     plot_graph = lambda i: gv.plot_component_graph(f'{name} SLAC round {i} (with noise)')
     alg = SingleLinkAgglomerativeClusteringAlgorithm(G, max_iterations, False, plot_graph)
     alg.run()
 
 def run():
     # dataset_names = ['ans1a'] 
-    dataset_names = ['blobs', 'moons', 'circles', 'ans1a', 'ans1b', 'ans1c', 'maccie']
-    n_samples = 1500
+    dataset_names = ['ans1a', 'ans1b', 'ans1c', 'blobs', 'moons', 'circles', 'maccie']
+    n_samples = 500
     n_clusters = 3
     for dataset in dataset_names:
         points = generate_points(dataset, n_samples, n_clusters)

@@ -44,15 +44,16 @@ class GraphVisualizer:
 
     def plot_component_graph(self, title = ''):
         plt.figure()
-        title = title + f": components {len(test)}"
+
+        components = [component for component in self.G.components if type(component) is Component]
         
-        test = [component for component in self.G.components if type(component) is Component]
-        colors = plt.get_cmap('viridis')(np.linspace(0, 1, len(test)))
+        title = f"{title} components {len(components)}"
+        colors = plt.get_cmap('viridis')(np.linspace(0, 1, len(components)))
 
         plt.title(title)
 
-        for i in range(len(test)):
-            component = test[i]
+        for i in range(len(components)):
+            component = components[i]
 
             xs, ys = [], []
             for x in component.V:
