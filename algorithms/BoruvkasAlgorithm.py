@@ -3,8 +3,8 @@ from algorithms.Graph import Graph, edge_index
 import math
 
 class BoruvkasAlgorithm(Algorithm):
-    def __init__(self, G: Graph, max_iterations):
-        super().__init__(G, max_iterations)
+    def __init__(self, G: Graph, max_iterations, print_graph = False, plot_graph = None):
+        super().__init__(G, max_iterations, print_graph, plot_graph)
 
     def __contraction(self, L):
         NGPrime = dict()
@@ -58,9 +58,9 @@ class BoruvkasAlgorithm(Algorithm):
             L[u] = best_vertex
         return L
 
-    def run(self, print_graph = False, plot_graph = None):
+    def run(self):
         print(f"running boruvkas algorithm: max_iterations = {self.max_iterations}\nGraph:")
-        if print_graph:
+        if self.do_print_graph:
             self.print_graph()
         self.reset()
         L = dict()
@@ -74,10 +74,10 @@ class BoruvkasAlgorithm(Algorithm):
             self.__contraction(L[i])
             Vs[i] = self.G.V
             Es[i] = self.G.E
-            if print_graph:
+            if self.do_print_graph:
                 self.print_graph()
-            if plot_graph is not None:
-                plot_graph(i)
+            if self.plot_graph is not None:
+                self.plot_graph(i)
             if len(self.G.V) <= 1:
                 break
         return L, Vs, Es

@@ -1,14 +1,23 @@
 import numpy as np
 from scipy.spatial import Voronoi
 from matplotlib import pyplot as plt
+import os
 
 from algorithms.Graph import Component
 
 
 class GraphVisualizer:
-    def __init__(self, G):
+    def __init__(self, G, save = False):
         self.G = G
         self.plot_calls = 0
+        self.save = save
+
+    def __savefig(self, title):
+        if self.save:
+            directory = 'GraphVisualizerResults'
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            plt.savefig(f'{directory}/{title}.png')
 
     def plot_graph(self, title = ''):
         plt.figure()
@@ -30,14 +39,17 @@ class GraphVisualizer:
 
         self.plot_calls = self.plot_calls + 1
 
+        self.__savefig(title)
 
-    def plot_component_graph(self, title = '', ):
+
+    def plot_component_graph(self, title = ''):
         plt.figure()
+        title = title + f": components {len(test)}"
         
         test = [component for component in self.G.components if type(component) is Component]
         colors = plt.get_cmap('viridis')(np.linspace(0, 1, len(test)))
 
-        plt.title(title + f": components {len(test)}")
+        plt.title(title)
 
         for i in range(len(test)):
             component = test[i]
@@ -58,10 +70,15 @@ class GraphVisualizer:
             ax.set_ylim(self.ylim)
 
         self.plot_calls = self.plot_calls + 1
+        
+        self.__savefig(title)
 
 
     def plot_kmeans(self, title = '', centroids = None, voronoi = False):
+        tempsave = self.save
+        self.save = False
         self.plot_graph(title=title)
+        self.save = tempsave
 
         if centroids is None:
             return
@@ -80,6 +97,8 @@ class GraphVisualizer:
             for region in regions:
                 polygon = vertices[region]
                 plt.fill(*zip(*polygon), alpha=0.4)
+        
+        self.__savefig(title)
             
 
     def __voronoi_finite_polygons_2d(self, vor, radius=None):

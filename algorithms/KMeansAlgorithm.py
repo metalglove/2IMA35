@@ -6,13 +6,13 @@ from algorithms.Graph import Graph
 
 
 class KMeansAlgorithm(Algorithm):
-    def __init__(self, G: Graph, max_iterations: int, n_clusters: int):
-        super().__init__(G, max_iterations)
+    def __init__(self, G: Graph, max_iterations: int, n_clusters: int, print_graph: bool = False, plot_graph = None):
+        super().__init__(G, max_iterations, print_graph, plot_graph)
         self.reset()
         self.n_clusters = n_clusters
         self.previous_centroids = None
 
-    def run(self, print_graph = False, plot_graph = None):
+    def run(self):
         print(f"running kmeans algorithm: max_iterations = {self.max_iterations}")
         self.reset()
 
@@ -29,10 +29,10 @@ class KMeansAlgorithm(Algorithm):
             kmeans = kmeans.fit(np.array(self.G.points))
             centroids = kmeans.cluster_centers_
 
-            if print_graph:
+            if self.do_print_graph:
                 self.print_graph(centroids)
-            if plot_graph is not None:
-                plot_graph(i, centroids)
+            if self.plot_graph is not None:
+                self.plot_graph(i, centroids)
             if not self.have_centroids_moved(centroids):
                 break
 

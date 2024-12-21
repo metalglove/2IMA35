@@ -1,9 +1,9 @@
 from algorithms.Algorithm import Algorithm
-from algorithms.Graph import Component, Graph, edge_index
+from algorithms.Graph import Component, Graph
 
 class SingleLinkAgglomerativeClusteringAlgorithm(Algorithm):
-    def __init__(self, G: Graph, max_iterations: int):
-        super().__init__(G, max_iterations)
+    def __init__(self, G: Graph, max_iterations: int, print_graph: bool = False, plot_graph = None):
+        super().__init__(G, max_iterations, print_graph, plot_graph)
 
 
     def __find_component(self, v) -> Component:
@@ -28,7 +28,7 @@ class SingleLinkAgglomerativeClusteringAlgorithm(Algorithm):
         for i in self.G.components[ic].V:
             self.component_map[i] = ic
 
-    def run(self, print_graph = False, plot_graph = None):
+    def run(self):
         print(f"running Single-Linkage Agglomerative algorithm: max_iterations = {self.max_iterations}")
         self.reset()
 
@@ -50,12 +50,12 @@ class SingleLinkAgglomerativeClusteringAlgorithm(Algorithm):
 
             num_components = len([component for component in self.G.components if type(component) is Component])
 
-            if print_graph:
+            if self.do_print_graph:
                 self.print_graph()
 
             if num_components <= 5:
-                if plot_graph is not None:
-                    plot_graph(i)
+                if self.plot_graph is not None:
+                    self.plot_graph(i)
 
             if num_components == 1:
                 print(f"round {i}: components 1")
