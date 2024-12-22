@@ -28,7 +28,7 @@ class SingleLinkAgglomerativeClusteringAlgorithm(Algorithm):
         for i in self.G.components[ic].V:
             self.component_map[i] = ic
 
-    def run(self):
+    def run(self, start_plotting_at_n_components = 5):
         print(f"running Single-Linkage Agglomerative algorithm: max_iterations = {self.max_iterations}")
         self.reset()
 
@@ -53,7 +53,7 @@ class SingleLinkAgglomerativeClusteringAlgorithm(Algorithm):
             if self.do_print_graph:
                 self.print_graph()
 
-            if num_components <= 5:
+            if num_components <= start_plotting_at_n_components:
                 if self.plot_graph is not None:
                     self.plot_graph(i)
 

@@ -3,33 +3,41 @@ from scipy.spatial import Voronoi
 from matplotlib import pyplot as plt
 import os
 
-from algorithms.Graph import Component
+from algorithms.Graph import Component, Graph
 
 
 class GraphVisualizer:
-    def __init__(self, G, save = False):
+    def __init__(self, G: Graph, save = False, dir = ''):
         self.G = G
         self.plot_calls = 0
         self.save = save
+        self.dir = dir
 
     def __savefig(self, title):
         if self.save:
             directory = 'GraphVisualizerResults'
+            if self.dir != '':
+                directory = f'{directory}/{self.dir}'
             if not os.path.exists(directory):
                 os.makedirs(directory)
             plt.savefig(f'{directory}/{title}.png')
 
-    def plot_graph(self, title = ''):
-        plt.figure()
+    def gca(self, ax):
+        if ax is None:
+            plt.figure()
+            ax = plt.gca()
+        return ax
+        
+    def plot_graph(self, title = '', ax = None):
+        ax = self.gca(ax)
 
         xs, ys = [], []
         for x in self.G.V.keys():
             xs.append(self.G.points[x][0])
             ys.append(self.G.points[x][1])
-        plt.title(title)
-        plt.scatter(xs, ys, c='r')
+        ax.set_title(title)
+        ax.scatter(xs, ys, c='r')
 
-        ax = plt.gca()
         if self.plot_calls == 0:
             self.xlim = ax.get_xlim()
             self.ylim = ax.get_ylim()
@@ -42,15 +50,15 @@ class GraphVisualizer:
         self.__savefig(title)
 
 
-    def plot_component_graph(self, title = ''):
-        plt.figure()
+    def plot_component_graph(self, title = '', ax = None):
+        ax = self.gca(ax)
 
         components = [component for component in self.G.components if type(component) is Component]
         
         title = f"{title} components {len(components)}"
         colors = plt.get_cmap('viridis')(np.linspace(0, 1, len(components)))
 
-        plt.title(title)
+        ax.set_title(title)
 
         for i in range(len(components)):
             component = components[i]
@@ -60,9 +68,8 @@ class GraphVisualizer:
                 xs.append(self.G.points[x][0])
                 ys.append(self.G.points[x][1])
 
-            plt.scatter(xs, ys, color=colors[i])
+            ax.scatter(xs, ys, color=colors[i])
 
-        ax = plt.gca()
         if self.plot_calls == 0:
             self.xlim = ax.get_xlim()
             self.ylim = ax.get_ylim()
@@ -75,17 +82,20 @@ class GraphVisualizer:
         self.__savefig(title)
 
 
-    def plot_kmeans(self, title = '', centroids = None, voronoi = False):
+    def plot_kmeans(self, title = '', centroids = None, voronoi = False, ax = None):
+        ax = self.gca(ax)
+        ax.clear()
+
         tempsave = self.save
         self.save = False
-        self.plot_graph(title=title)
+        self.plot_graph(title=title, ax = ax)
         self.save = tempsave
 
         if centroids is None:
             return
 
         # plot centroids
-        plt.plot(centroids[:,0], centroids[:,1], 'ko')
+        ax.plot(centroids[:,0], centroids[:,1], 'ko')
 
         if voronoi:
             # compute Voronoi tesselation
@@ -97,7 +107,7 @@ class GraphVisualizer:
             # colorize
             for region in regions:
                 polygon = vertices[region]
-                plt.fill(*zip(*polygon), alpha=0.4)
+                ax.fill(*zip(*polygon), alpha=0.4)
         
         self.__savefig(title)
             
