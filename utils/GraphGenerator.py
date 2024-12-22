@@ -4,6 +4,7 @@ import sys
 import numpy as np
 
 from algorithms.Graph import Graph
+from utils.GraphUtils import euclidean_distance, find_min_max_x_y
 
 class GraphGenerator(object):
 
@@ -11,20 +12,8 @@ class GraphGenerator(object):
         self.points = points
         self.edges = edges
 
-    def __find_min_max_x_y(self):
-        max_x, max_y = -1.0, -1.0
-        min_x, min_y = sys.maxsize, sys.maxsize
-
-        for v in self.points:
-            max_x = max(max_x, v[0])
-            max_y = max(max_y, v[1])
-            min_x = min(min_x, v[0])
-            min_y = min(min_y, v[1])
-
-        return min_x, max_x, min_y, max_y
-
     def add_gaussian_noise(self, noise=0.1):
-        min_x, max_x, min_y, max_y = self.__find_min_max_x_y()
+        min_x, max_x, min_y, max_y = find_min_max_x_y(self.points)
 
         size = int(np.ceil(len(self.points) * noise))
         for i in range(size):
@@ -35,7 +24,7 @@ class GraphGenerator(object):
         return self
 
     def add_clustered_noise(self, type='', noise=0.1):
-        min_x, max_x, min_y, max_y = self.__find_min_max_x_y()
+        min_x, max_x, min_y, max_y = find_min_max_x_y(self.points)
 
         size = int(np.ceil(len(self.points) * noise))
         if type == '':
@@ -121,9 +110,6 @@ class GraphGenerator(object):
         return self
 
     def to_graph(self, gen_pair_wise = False, f = None) -> Graph:
-        def euclidean_distance(p1, p2):
-            return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
-    
         G = Graph()
         G.points = self.points
 
