@@ -60,9 +60,36 @@ class GraphVisualizer:
             ax.scatter(xs, ys, c=colors)
         else:
             ax.scatter(xs, ys, c='r')
-            
+
         self.set_plt_lims(ax)
 
+        self.__savefig(title)
+
+
+    def plot_neighborhoods(self, title = '', ax = None):
+        ax = self.gca(ax)
+        ax.clear()
+
+        neighborhoods = self.G.NGPrime
+
+        title = f"{title} neighborhoods {len(neighborhoods)}"
+        colors = plt.get_cmap('viridis')(np.linspace(0, 1, len(neighborhoods)))
+        ax.set_title(title)
+
+        i = 0
+        for k, neighborhood in neighborhoods.items():
+
+            xs, ys = [], []
+            for x in neighborhood - {k}:
+                xs.append(self.G.points[x][0])
+                ys.append(self.G.points[x][1])
+
+            ax.scatter(xs, ys, color=colors[i])
+            ax.scatter(self.G.points[k][0], self.G.points[k][1], color=colors[i], marker="s", edgecolor='black', linewidth=2)
+            i = i + 1
+
+        self.set_plt_lims(ax)
+        
         self.__savefig(title)
 
 

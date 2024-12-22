@@ -100,10 +100,11 @@ class Graph:
         #   check if the value of table[i][j] is not equal to inf
         #   if so, create an edge from vertex i to vertex j in G2. else, nothing
 
+        self.NGPrime = NGPrime
 
         # collapse vertices to their leader
         for vp in VPrime:
-            neighborhood = NGPrime[vp]
+            neighborhood = self.NGPrime[vp]
 
             # find edges of each vertex in the neighborhood
             edges = set([edge_index(u,v) for v in neighborhood for u in self.V[v]])
@@ -124,3 +125,4 @@ class Graph:
 
         # remove vertices that are in the neighborhood
         self.clean_vertices()
+        

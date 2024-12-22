@@ -38,6 +38,7 @@ class BoruvkasAlgorithm(Algorithm):
 
         print("neighborhoods: " + str([f"{ng} " for ng in NGPrime.items()]))
         self.G.construct_components(VPrime, NGPrime)
+        return NGPrime
 
     def __find_nearest_neighbors(self):
         L = dict()
@@ -62,12 +63,14 @@ class BoruvkasAlgorithm(Algorithm):
         L = dict()
         Vs = dict()
         Es = dict()
+        NGs = dict()
         Vs[0] = self.G.V
         Es[0] = self.G.E
+        NGs[0] = self.G.V
         for i in range(1, self.max_iterations + 1):
             print(f"round {i}")
             L[i] = self.__find_nearest_neighbors()
-            self.__contraction(L[i])
+            NGs[i] = self.__contraction(L[i])
             Vs[i] = self.G.V
             Es[i] = self.G.E
             if self.do_print_graph:
@@ -76,5 +79,5 @@ class BoruvkasAlgorithm(Algorithm):
                 self.plot_graph(i)
             if len(self.G.V) <= 1:
                 break
-        return L, Vs, Es
+        return L, Vs, Es, NGs
 
