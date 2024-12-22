@@ -14,12 +14,13 @@ class GraphVisualizer:
         self.save = save
         self.dir = dir
         min_x, max_x, min_y, max_y = find_min_max_x_y(self.G.points)
-        max_i = max(map(abs, [min_x, min_y, max_x, max_y]))
+        max_h = abs(max_x - min_x)
+        max_v = abs(max_y - min_y)
         bound_percentage = 0.05
-        self.min_x = min_x - (max_i * bound_percentage)
-        self.max_x = max_x + (max_i * bound_percentage)
-        self.min_y = min_y - (max_i * bound_percentage)
-        self.max_y = max_y + (max_i * bound_percentage)
+        self.min_x = min_x - (max_h * bound_percentage)
+        self.max_x = max_x + (max_h * bound_percentage)
+        self.min_y = min_y - (max_v * bound_percentage)
+        self.max_y = max_y + (max_v * bound_percentage)
 
 
     def __savefig(self, title):
@@ -83,7 +84,6 @@ class GraphVisualizer:
         self.set_plt_lims(ax)
         
         self.__savefig(title)
-
 
     def plot_kmeans(self, title = '', centroids = None, voronoi = False, ax = None):
         ax = self.gca(ax)

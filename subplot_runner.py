@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 from algorithms.Algorithm import Algorithm
+from algorithms.Graph import Component
 from algorithms.KMeansAlgorithm import KMeansAlgorithm
 from algorithms.SingleLinkAgglomerativeClusteringAlgorithm import SingleLinkAgglomerativeClusteringAlgorithm
 from utils.datasets import generate_points
@@ -88,7 +89,7 @@ def singlelink(clean, name, points, ax):
         max_iterations = len(points)
 
         def plot(i):
-            if len(gv.G.V) >= 3:
+            if len([component for component in gv.G.components if type(component) is Component]) >= 3:
                 gv.plot_component_graph(f'{name} SLAC round {i}', ax=ax)
 
         alg = SingleLinkAgglomerativeClusteringAlgorithm(G, max_iterations, False, plot)
@@ -106,7 +107,7 @@ def singlelink(clean, name, points, ax):
         max_iterations = len(points)
 
         def plot(i):
-            if len(gv.G.V) >= 3:
+            if len([component for component in gv.G.components if type(component) is Component]) >= 3:
                 gv.plot_component_graph(f'{name} SLAC round {i} (with noise)', ax=ax)
 
         alg = SingleLinkAgglomerativeClusteringAlgorithm(G, max_iterations, False, plot)
