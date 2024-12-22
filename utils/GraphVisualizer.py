@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import os
 
 from algorithms.Graph import Component, Graph
+from utils.GraphUtils import find_min_max_x_y
 
 
 class GraphVisualizer:
@@ -12,6 +13,14 @@ class GraphVisualizer:
         self.plot_calls = 0
         self.save = save
         self.dir = dir
+        min_x, max_x, min_y, max_y = find_min_max_x_y(self.G.points)
+        max_i = max(map(abs, [min_x, min_y, max_x, max_y]))
+        bound_percentage = 0.05
+        self.min_x = min_x - (max_i * bound_percentage)
+        self.max_x = max_x + (max_i * bound_percentage)
+        self.min_y = min_y - (max_i * bound_percentage)
+        self.max_y = max_y + (max_i * bound_percentage)
+
 
     def __savefig(self, title):
         if self.save:
@@ -27,9 +36,16 @@ class GraphVisualizer:
             plt.figure()
             ax = plt.gca()
         return ax
+    
+    def set_plt_lims(self, ax):
+        ax.set_xlim([self.min_x, self.max_x])
+        ax.set_ylim([self.min_y, self.max_y])
         
+        self.plot_calls = self.plot_calls + 1
+
     def plot_graph(self, title = '', ax = None):
         ax = self.gca(ax)
+        ax.clear()
 
         xs, ys = [], []
         for x in self.G.V.keys():
@@ -38,20 +54,14 @@ class GraphVisualizer:
         ax.set_title(title)
         ax.scatter(xs, ys, c='r')
 
-        if self.plot_calls == 0:
-            self.xlim = ax.get_xlim()
-            self.ylim = ax.get_ylim()
-        else:
-            ax.set_xlim(self.xlim)
-            ax.set_ylim(self.ylim)
-
-        self.plot_calls = self.plot_calls + 1
+        self.set_plt_lims(ax)
 
         self.__savefig(title)
 
 
     def plot_component_graph(self, title = '', ax = None):
         ax = self.gca(ax)
+        ax.clear()
 
         components = [component for component in self.G.components if type(component) is Component]
         
@@ -70,14 +80,7 @@ class GraphVisualizer:
 
             ax.scatter(xs, ys, color=colors[i])
 
-        if self.plot_calls == 0:
-            self.xlim = ax.get_xlim()
-            self.ylim = ax.get_ylim()
-        else:
-            ax.set_xlim(self.xlim)
-            ax.set_ylim(self.ylim)
-
-        self.plot_calls = self.plot_calls + 1
+        self.set_plt_lims(ax)
         
         self.__savefig(title)
 
@@ -108,6 +111,8 @@ class GraphVisualizer:
             for region in regions:
                 polygon = vertices[region]
                 ax.fill(*zip(*polygon), alpha=0.4)
+
+        self.set_plt_lims(ax)
         
         self.__savefig(title)
             
