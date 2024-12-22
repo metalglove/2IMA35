@@ -1,18 +1,16 @@
+import math
+import random
 from matplotlib import pyplot as plt
+import numpy as np
 from algorithms.Algorithm import Algorithm
 from algorithms.Graph import Component
 from algorithms.KMeansAlgorithm import KMeansAlgorithm
 from algorithms.SingleLinkAgglomerativeClusteringAlgorithm import SingleLinkAgglomerativeClusteringAlgorithm
+from utils.RunningUtils import get_runner_string
 from utils.datasets import generate_points
 from utils.GraphGenerator import GraphGenerator
 from utils.GraphVisualizer import GraphVisualizer
 from algorithms.BoruvkasAlgorithm import BoruvkasAlgorithm
-
-def get_runner_string(name, clean, dir):
-    sub = 'clean'
-    if not clean:
-        sub = 'noisy'
-    return f'{name}/{dir}/{sub}'
 
 def boruvkas(clean, name, points, ax):
     if clean:
@@ -130,4 +128,6 @@ def run():
         
 
 if __name__ == "__main__":
+    np.random.seed(56)
+    random.seed(56)
     run()
