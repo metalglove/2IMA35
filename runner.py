@@ -47,7 +47,7 @@ def kmeans(name, points, n_clusters):
     gv = GraphVisualizer(G, True)
     gv.plot_graph(f'{name}')
 
-    max_iterations = 10
+    max_iterations = 300
     plot_graph = lambda i, centroids: gv.plot_kmeans(f'{name} kmeans round {i}', centroids=centroids, voronoi=True)
     alg = KMeansAlgorithm(G, max_iterations, n_clusters, False, plot_graph)
     alg.run()
@@ -98,8 +98,8 @@ def singlelink(name, points):
     alg.run()
 
 def run():
-    # dataset_names = ['ans1a'] 
-    dataset_names = ['ans1a', 'ans1b', 'ans1c', 'blobs', 'moons', 'circles', 'maccie']
+    dataset_names = ['ans1c'] 
+    # dataset_names = ['ans1a', 'ans1b', 'ans1c', 'blobs', 'moons', 'circles', 'maccie']
     n_samples = 500
     n_clusters = 3
     for dataset in dataset_names:

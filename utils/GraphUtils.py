@@ -2,6 +2,15 @@ import math
 import matplotlib.pyplot as plt
 from algorithms.Graph import Graph
 
+def frobenius(p1):
+    res = p1[0]**2
+    res += p1[1]**2
+    return math.sqrt(res)
+
+def euclidean_distance(p1, p2):
+    res = math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+    return res
+
 def generate_graph(points, f):
     G = Graph()
     G.points = points
