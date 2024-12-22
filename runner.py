@@ -18,7 +18,7 @@ def boruvkas(name, points):
     gv.plot_graph(f'{name}')
 
     max_iterations = 10
-    plot_graph = lambda i: gv.plot_graph(f'{name} boruvkas round {i}')
+    plot_graph = lambda i: gv.plot_graph(f'{name} boruvkas round {i}', color=True)
     alg = BoruvkasAlgorithm(G, max_iterations, False, plot_graph)
     alg.run()
     
@@ -32,7 +32,7 @@ def boruvkas(name, points):
     gv.plot_graph(f'{name} with gauss noise')
 
     max_iterations = 10
-    plot_graph = lambda i: gv.plot_graph(f'{name} boruvkas round {i} (noise)')
+    plot_graph = lambda i: gv.plot_graph(f'{name} boruvkas round {i} (noise)', color=True)
     alg = BoruvkasAlgorithm(G, max_iterations, False, plot_graph)
     _ = alg.run()
 

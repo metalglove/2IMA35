@@ -14,14 +14,10 @@ class BoruvkasAlgorithm(Algorithm):
             c = u
             v = u
             s = list()
-            E = list()
             while v not in s:
                 s = set(s).union([v])
                 c = v
-                v_ = L[v]
-                e = edge_index(v_, v)
-                v = v_
-                E.append(e)
+                v = L[v]
             c = min(c, v)
             # if c is a leader (c in V')
             if c in VPrime:

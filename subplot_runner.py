@@ -24,7 +24,7 @@ def boruvkas(clean, name, points, ax):
 
         def plot(i):
             if len(gv.G.V) >= 3:
-                gv.plot_graph(f'{name} boruvkas round {i}', ax=ax)
+                gv.plot_graph(f'{name} boruvkas round {i}', ax=ax, color = True)
 
         max_iterations = 30
         alg = BoruvkasAlgorithm(G, max_iterations, False, plot)
@@ -39,7 +39,7 @@ def boruvkas(clean, name, points, ax):
 
         def plot(i):
             if len(gv.G.V) >= 3:
-                gv.plot_graph(f'{name} boruvkas round {i} (noise)', ax=ax)
+                gv.plot_graph(f'{name} boruvkas round {i} (noise)', ax=ax, color = True)
 
         max_iterations = 30
         alg = BoruvkasAlgorithm(G, max_iterations, False, plot)

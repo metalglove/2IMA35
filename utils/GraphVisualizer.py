@@ -44,17 +44,23 @@ class GraphVisualizer:
         
         self.plot_calls = self.plot_calls + 1
 
-    def plot_graph(self, title = '', ax = None):
+    def plot_graph(self, title = '', ax = None, clear = True, color = False):
         ax = self.gca(ax)
-        ax.clear()
-
+        if clear:
+            ax.clear()
+        
         xs, ys = [], []
         for x in self.G.V.keys():
             xs.append(self.G.points[x][0])
             ys.append(self.G.points[x][1])
         ax.set_title(title)
-        ax.scatter(xs, ys, c='r')
-
+        
+        if color:
+            colors = plt.get_cmap('viridis')(np.linspace(0, 1, len(self.G.V.keys())))
+            ax.scatter(xs, ys, c=colors)
+        else:
+            ax.scatter(xs, ys, c='r')
+            
         self.set_plt_lims(ax)
 
         self.__savefig(title)
@@ -89,17 +95,6 @@ class GraphVisualizer:
         ax = self.gca(ax)
         ax.clear()
 
-        tempsave = self.save
-        self.save = False
-        self.plot_graph(title=title, ax = ax)
-        self.save = tempsave
-
-        if centroids is None:
-            return
-
-        # plot centroids
-        ax.plot(centroids[:,0], centroids[:,1], 'ko')
-
         if voronoi:
             # compute Voronoi tesselation
             vor = Voronoi(centroids)
@@ -111,6 +106,17 @@ class GraphVisualizer:
             for region in regions:
                 polygon = vertices[region]
                 ax.fill(*zip(*polygon), alpha=0.4)
+
+        tempsave = self.save
+        self.save = False
+        self.plot_graph(title=title, ax = ax, clear = False)
+        self.save = tempsave
+
+        if centroids is None:
+            return
+
+        # plot centroids
+        ax.plot(centroids[:,0], centroids[:,1], 'ko')
 
         self.set_plt_lims(ax)
         
