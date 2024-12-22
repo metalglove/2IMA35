@@ -3,6 +3,7 @@ from sklearn.cluster import KMeans
 
 from algorithms.Algorithm import Algorithm
 from algorithms.Graph import Graph
+from utils.GraphUtils import frobenius
 
 
 class KMeansAlgorithm(Algorithm):
@@ -10,7 +11,7 @@ class KMeansAlgorithm(Algorithm):
         super().__init__(G, max_iterations, print_graph, plot_graph)
         self.reset()
         self.n_clusters = n_clusters
-        self.previous_centroids = None
+        self.previous = None
 
     def run(self):
         print(f"running kmeans algorithm: max_iterations = {self.max_iterations}")
@@ -24,7 +25,7 @@ class KMeansAlgorithm(Algorithm):
                             max_iter=1, 
                             n_init=1,
                             init=(centroids if centroids is not None else 'k-means++'),
-                            random_state=56)
+                            random_state=0)
 
             kmeans = kmeans.fit(np.array(self.G.points))
             centroids = kmeans.cluster_centers_
@@ -42,14 +43,13 @@ class KMeansAlgorithm(Algorithm):
         print(f"centroids: {centroids}")
 
     def have_centroids_moved(self, centroids):
-        if self.previous_centroids is None:
-            self.previous_centroids = centroids
+        if self.previous is None:
+            self.previous = sum([frobenius(centroid) for centroid in centroids])
             return True
         
-        diff = 0
-        for i in range(len(centroids)):
-            diff += abs(self.previous_centroids[i][0] - centroids[i][0])
-            diff += abs(self.previous_centroids[i][1] - centroids[i][1])
-        self.previous_centroids = centroids
-        return diff >= 0.01 
+        current = sum([frobenius(centroid) for centroid in centroids])
+        diff = abs(current - self.previous)
+        print(f'frobenius norm | previous: {self.previous}, current: {current}, diff: {diff}')
+        self.previous = current
+        return diff >= 0.0001
         
