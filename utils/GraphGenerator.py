@@ -1,4 +1,5 @@
 import math
+import random
 import sys
 
 import numpy as np
@@ -11,6 +12,8 @@ class GraphGenerator(object):
     def __init__(self, points: list[tuple[2]], edges: list[tuple[3]] = []):
         self.points = points
         self.edges = edges
+        np.random.seed(56)
+        random.seed(56)
 
     def add_gaussian_noise(self, noise=0.1):
         min_x, max_x, min_y, max_y = find_min_max_x_y(self.points)

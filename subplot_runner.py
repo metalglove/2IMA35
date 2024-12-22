@@ -30,9 +30,7 @@ def boruvkas(clean, name, points, ax):
     else:
         print(f'\n==== BORUVKAS ALGORITHM (NOISY) ====\n')
         # with noise
-        G = GraphGenerator(points.copy()) \
-            .add_gaussian_noise(0.1) \
-            .to_graph(gen_pair_wise=True)
+        G = get_noise(points)
         gv = GraphVisualizer(G, True, dir = get_runner_string(name, clean, 'runner'))
 
         def plot(i):
@@ -63,9 +61,7 @@ def kmeans(clean, name, points, n_clusters, ax):
         print(f'\n==== KMEANS ALGORITHM (NOISY) ====\n')
 
         # with noise
-        G = GraphGenerator(points.copy()) \
-            .add_gaussian_noise(0.1) \
-            .to_graph(gen_pair_wise=True)
+        G = get_noise(points)
         gv = GraphVisualizer(G, True, dir = get_runner_string(name, clean, 'runner'))
         
         def plot(i, centroids):
@@ -84,7 +80,7 @@ def singlelink(clean, name, points, ax):
             .to_graph(gen_pair_wise=True)
         gv = GraphVisualizer(G, True, dir = get_runner_string(name, clean, 'runner'))
 
-        max_iterations = len(points)
+        max_iterations = len(G.V)
 
         def plot(i):
             if len([component for component in gv.G.components if type(component) is Component]) >= 3:
@@ -97,12 +93,10 @@ def singlelink(clean, name, points, ax):
         print(f'\n==== SLAC ALGORITHM (NOISY) ====\n')
         
         # with noise
-        G = GraphGenerator(points.copy()) \
-            .add_gaussian_noise(0.1) \
-            .to_graph(gen_pair_wise=True)
+        G = get_noise(points)
         gv = GraphVisualizer(G, True, dir = get_runner_string(name, clean, 'runner'))
 
-        max_iterations = len(points)
+        max_iterations = len(G.V)
 
         def plot(i):
             if len([component for component in gv.G.components if type(component) is Component]) >= 3:
@@ -112,12 +106,24 @@ def singlelink(clean, name, points, ax):
         start_plotting_at_n_components = 15
         alg.run(start_plotting_at_n_components)
 
+def get_noise(points):
+        # .add_gaussian_noise(0.25) \
+        # .draw_line((-1, 5), (0, -6.), 1.5) \
+        # .add_clustered_noise('circle', 0.1) \
+        # .add_point((8, 7)) \
+    G = GraphGenerator(points.copy()) \
+        .add_point((7, 7)) \
+        .to_graph(gen_pair_wise=True)
+    return G
+
 def run():
+    dataset_names = ['blobs'] 
     # dataset_names = ['ans1c'] 
-    dataset_names = ['ans1a', 'ans1b', 'ans1c', 'blobs', 'moons', 'circles', 'maccie']
+    # dataset_names = ['ans1a', 'ans1b', 'ans1c',] 
+    # dataset_names = ['ans1a', 'ans1b', 'ans1c', 'blobs', 'moons', 'circles', 'maccie']
     n_samples = 500
     n_clusters = 3
-    for clean in [True, False]:
+    for clean in [True]: # True
         for dataset in dataset_names:
             fig = plt.figure(figsize=(16, 4))
             axs = fig.subplots(1, 3, sharex=True, sharey=True)
