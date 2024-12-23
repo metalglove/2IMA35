@@ -53,7 +53,7 @@ class SingleLinkAgglomerativeClusteringAlgorithm(Algorithm):
             if self.do_print_graph:
                 self.print_graph()
 
-            print(f'num_components: {num_components}')
+            # print(f'num_components: {num_components}')
 
             if num_components <= start_plotting_at_n_components:
                 if self.plot_graph is not None:

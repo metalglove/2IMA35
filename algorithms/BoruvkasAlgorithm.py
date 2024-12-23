@@ -34,7 +34,7 @@ class BoruvkasAlgorithm(Algorithm):
             self.G.E = dict()
             self.G.V = dict({k: {}})
             print(f"final neighborhood: {k, NGPrime[k]}")
-            return
+            return NGPrime
 
         print("neighborhoods: " + str([f"{ng} " for ng in NGPrime.items()]))
         self.G.construct_components(VPrime, NGPrime)
@@ -75,7 +75,7 @@ class BoruvkasAlgorithm(Algorithm):
             Es[i] = self.G.E
             if self.do_print_graph:
                 self.print_graph()
-            if self.plot_graph is not None:
+            if self.plot_graph is not None and len(self.G.V) > 1:
                 self.plot_graph(i)
             if len(self.G.V) <= 1:
                 break
