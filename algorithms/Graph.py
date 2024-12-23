@@ -74,8 +74,7 @@ class Graph:
     def clean_vertices(self):
         self.V = {k: v for k, v in self.V.items() if len(v) > 0}
 
-    def construct_components(self, VPrime, NGPrime):
-        # VPrime -> Leader Vertices
+    def construct_components(self, NGPrime: dict[set]):
         # NGPrime -> All nodes in a component (all vertices that should be collapsed to one vertex)
 
         # NGPrime[2] = {1, 2, 3, 6} -> 2 is the leader, so all remaining vertices should collapse to 2.
@@ -103,8 +102,7 @@ class Graph:
         self.NGPrime = NGPrime
 
         # collapse vertices to their leader
-        for vp in VPrime:
-            neighborhood = self.NGPrime[vp]
+        for leader, neighborhood in self.NGPrime.items():
 
             # find edges of each vertex in the neighborhood
             edges = set([edge_index(u,v) for v in neighborhood for u in self.V[v]])
@@ -114,9 +112,9 @@ class Graph:
                 edge = (u, v)
                 if u not in neighborhood or v not in neighborhood:
                     if u in neighborhood:
-                        u = vp
+                        u = leader
                     else:
-                        v = vp
+                        v = leader
                     # update an edge bridging the components to their leader vertex
                     self.update_edge(edge, edge_index(u, v))
                 else:
