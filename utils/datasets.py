@@ -65,7 +65,7 @@ def __generate_maccie():
 
     return filterPoints(points)
 
-def generate_points(name, n_samples = 300, n_clusters = 3):
+def generate_points(name, n_samples = 300, n_clusters = 3, seed = 56):
     if name == 'ans1c':
         return points1c
     elif name == 'ans1b':
@@ -73,13 +73,13 @@ def generate_points(name, n_samples = 300, n_clusters = 3):
     elif name =='ans1a':
         return points1a
     elif name == 'blobs':
-        V, _ = make_blobs(n_samples = n_samples, centers = n_clusters, n_features = 2, random_state = 56)
+        V, _ = make_blobs(n_samples = n_samples, centers = n_clusters, n_features = 2, random_state = seed)
         return list(map(tuple, V))
     elif name == 'moons':
-        V, _ = make_moons(n_samples = n_samples, random_state = 56)
+        V, _ = make_moons(n_samples = n_samples, random_state = seed)
         return list(map(tuple, V))
     elif name == 'circles':
-        V, _ = make_circles(n_samples = n_samples, factor = 0.5, random_state = 56)
+        V, _ = make_circles(n_samples = n_samples, factor = 0.5, random_state = seed)
         return list(map(tuple, V))
     elif name == 'maccie':
         return __generate_maccie()
