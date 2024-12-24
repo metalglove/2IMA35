@@ -12,23 +12,21 @@ class BoruvkasAlgorithmSingleMachine:
 
     def __contraction(self, V: dict[set], E, L):
         NGPrime = dict()
-        VPrime = set()
         for u in V.keys():
             c = u
             v = u
-            s = list()
+            s = set()
             while v not in s:
-                s = set(s).union([v])
+                s.add(v)
                 c = v
                 v =  L[v]
             c = min(c, v)
             # if c is a leader (c in V')
-            if c in VPrime:
+            if c in NGPrime.keys():
                 # update the vertices in the neighborhood of c
                 NGPrime[c] = set(NGPrime[c]).union(s)
             else:
                 # otherwise, add to the neighborhood and V'
-                VPrime = set(VPrime).union([c])
                 NGPrime[c] = set([c]).union(s)
 
         # we have finished clustering to a single vertex.
