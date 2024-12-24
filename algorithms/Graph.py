@@ -1,18 +1,18 @@
 
-def edge_index(i, j):
+def edge_index(i: int, j: int) -> tuple[int, int]:
     if i > j:
         return (i, j)
     return (j, i)
 
 class Component(object):
-    def __init__(self, v):
-        self.V = set([v])
+    def __init__(self, v: int):
+        self.V = {v}
 
     def expand(self, C):
         self.V = self.V | C.V
         return self
     
-    def contains(self, v):
+    def contains(self, v: int) -> bool:
         return v in self.V
     
     def __hash__(self):
@@ -21,8 +21,9 @@ class Component(object):
 
 class Graph:
     def __init__(self):
-        self.V = dict()
-        self.E = dict()
+        self.V = dict[int, set]()
+        self.E = dict[tuple[int, int], int]()
+        self.points = list[tuple[int, int]]()
 
     def add_vertex(self, i):
         self.V[i] = set()
@@ -37,21 +38,21 @@ class Graph:
                 self.remove_edge(i, keys[j])
         del self.V[i]
         
-    def add_edge(self, i, j, w):
+    def add_edge(self, i: int, j: int, w: int):
         if i in self.V.keys() and j in self.V.keys():
             edge = edge_index(i, j)
             self.E[edge] = w
-            self.V[i] = self.V[i] | {j}
-            self.V[j] = self.V[j] | {i}
+            self.V[i].add(j)
+            self.V[j].add(i)
 
-    def remove_edge(self, i, j):
+    def remove_edge(self, i: int, j: int):
         if i in self.V.keys() and j in self.V.keys():
             edge = edge_index(i, j)
             del self.E[edge]
             self.V[i] = self.V[i] - {j}
             self.V[j] = self.V[j] - {i}
 
-    def update_edge(self, a, b):
+    def update_edge(self, a: tuple[int, int], b: tuple[int, int]):
         # add an edge if it doesn't already exist
         # if it does already exist, check whether the weight needs to be updated (from a to b)
 
@@ -74,7 +75,7 @@ class Graph:
     def clean_vertices(self):
         self.V = {k: v for k, v in self.V.items() if len(v) > 0}
 
-    def construct_components(self, NGPrime: dict[set]):
+    def construct_components(self, NGPrime: dict[int, set]):
         # NGPrime -> All nodes in a component (all vertices that should be collapsed to one vertex)
 
         # NGPrime[2] = {1, 2, 3, 6} -> 2 is the leader, so all remaining vertices should collapse to 2.

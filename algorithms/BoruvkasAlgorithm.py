@@ -62,6 +62,7 @@ class BoruvkasAlgorithm(Algorithm):
         Vs = dict()
         Es = dict()
         NGs = dict()
+        L[0] = dict()
         Vs[0] = self.G.V
         Es[0] = self.G.E
         NGs[0] = self.G.V
