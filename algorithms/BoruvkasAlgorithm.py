@@ -54,7 +54,7 @@ class BoruvkasAlgorithm(Algorithm):
         return L
 
     def run(self):
-        print(f"running boruvkas algorithm: max_iterations = {self.max_iterations}\nGraph:")
+        print(f"running boruvkas algorithm: max_iterations = {self.max_iterations}")
         if self.do_print_graph:
             self.print_graph()
         self.reset()

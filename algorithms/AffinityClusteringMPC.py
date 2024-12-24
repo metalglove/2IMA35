@@ -4,13 +4,15 @@ import math
 from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
 
-from algorithms.Graph import edge_index
+from algorithms.Algorithm import Algorithm
+from algorithms.Graph import Graph, edge_index
 
 # AffinityClustering is the MPC implementation of Boruvka's algorithm.
 # That is possible because Boruvka's algorithm is parallel friendly in nature.
-class AffinityClusteringMPC():
-    def __init__(self):
-        self.conf = SparkConf().setAppName('AffinityClustering')
+class AffinityClusteringMPC(Algorithm):
+    def __init__(self, G: Graph, max_iterations, print_graph = False, plot_graph = None):
+        super().__init__(G, max_iterations, print_graph, plot_graph)
+        self.conf = SparkConf('local[*]').setAppName('AffinityClustering')
         self.sc = SparkContext.getOrCreate(conf=self.conf)
 
     # def __find_nearest_neighbors(self):
@@ -18,12 +20,12 @@ class AffinityClusteringMPC():
     #     L = self.sc.broadcast({ i : self.__find_nearest_neighbor(i) for i in self.V })
     #     return L
 
-    def run(self, V, E):
+    def iterate(self, V, E):
         # to avoid referncing an object that has the SparkContext, we add the methods
         # within the run method.
         def find_nearest_neighbor_map(u: int, V: dict[int, set], E: dict[tuple[int, int], int]) -> tuple[int, int]:
             '''
-            Input: A graph G(V, E).
+            Input: The vertex u and the graph G(V, E).
             Output: The mapping L: V -> V of the input graph.
             '''
             # if the vertex has no edges, then the vertex itself is the only suitable mapping.
@@ -46,8 +48,8 @@ class AffinityClusteringMPC():
         
         def create_neighborhood_map(u: int, Lambda: dict[int, int]) -> tuple[int, set]:
             '''
-            Input: The graph G(V,E) and the mapping lambda: V' -> V
-            Output: A contracted graph G'(V', E') of the input graph G(V,E).
+            Input: The vertex u and the Lambda map V' -> V.
+            Output: The neighborhood map of u -> NG: V'.
             '''
             c = u
             v = u
@@ -70,7 +72,8 @@ class AffinityClusteringMPC():
         
         def contract_neighborhood_map(leader: int, neighborhood: set, E: dict[tuple[int, int], int]) -> tuple[int, dict[tuple[int, int], int]]:
             '''
-            
+            Input: The leader vertex, neighborhood map and edges.
+            Output: The edges crossing the neighborhood.
             '''
             edges_going_out_neighborhood = dict()
             updates = dict()
@@ -100,6 +103,7 @@ class AffinityClusteringMPC():
 
         def contract_neighborhood_reduce(a, b):
             keys = set(a.keys()) | set(b.keys())
+            
             result_dict = dict()
             for edge in keys:
                 if edge in a and edge in b:
@@ -112,16 +116,48 @@ class AffinityClusteringMPC():
                     result_dict[edge] = b[edge]
             return result_dict
 
-        contracted_graph = self.sc.parallelize(NG) \
-            .map(lambda leader: contract_neighborhood_map(leader, NG[leader], E)) \
-            .reduce(contract_neighborhood_reduce)
-        
-        print(f'contracted_graph: {contracted_graph}')
-        
+        if len(NG.keys()) > 1:
+            contracted_graph = self.sc.parallelize(NG) \
+                .map(lambda leader: contract_neighborhood_map(leader, NG[leader], E)) \
+                .reduce(contract_neighborhood_reduce)
+            
+            print(f'Contracted: {contracted_graph}')
 
-        # self.sc.parallelize(E) \
-        #     .map(lambda e: ((e[0], e[1]), 1)) \
-        #     .reduceByKey(lambda a, b: a + b).collect()
+            V = dict[int, set]()
+            E = dict[tuple[int, int], int]()
+            for (i, j), w in contracted_graph.items():
+                if i in V.keys():
+                    V[i].add(j)
+                else:
+                    V[i] = {j}
+                if j in V.keys():
+                    V[j].add(i)
+                else:
+                    V[j] = {i}
+                E[(i, j)] = w
+        else:
+            print(f'Contraction skipped.')
+            V = dict({next(iter(NG)): {}})
+            E = dict()
+
+        return Lambda, NG, V, E
+
+    def run(self):
+        print(f"running affinity clustering: max_iterations = {self.max_iterations}")
+        if self.do_print_graph:
+            self.print_graph()
+        self.reset()
+
+        for i in range(1, self.max_iterations + 1):
+            print(f"round {i}")
+            (L, self.G.NGPrime, self.G.V, self.G.E) = self.iterate(self.G.V, self.G.E)
+            if self.do_print_graph:
+                self.print_graph()
+            if self.plot_graph is not None and len(self.G.V) > 1:
+                self.plot_graph(i)
+            if len(self.G.V) <= 1:
+                break
+        self.sc.stop()
         
 # let i = 0 let leader(v) for each vertex v in V
 # repeat
