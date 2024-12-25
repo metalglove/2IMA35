@@ -32,8 +32,7 @@ class AffinityClusteringMPC(Algorithm):
             if not any(V[u]):
                 return u, u
             # otherwise, find the nearest neighbor of u by minimizing weight.
-            else:
-                (w, v) = min((E[edge_index(u, v)], v) for v in V if edge_index(u, v) in E)
+            (w, v) = min((E[edge_index(u, v)], v) for v in V if edge_index(u, v) in E)
             return u, v
 
         def find_nearest_neighbor_reduce(a: dict[int, int], b: dict[int, int]) -> dict[int, int]:
@@ -44,7 +43,7 @@ class AffinityClusteringMPC(Algorithm):
             .reduceByKey(find_nearest_neighbor_reduce) \
             .collectAsMap()
             
-        print(f'Lambda: {Lambda}')
+        print(f'Lambda: {len(Lambda)}')
         
         def create_neighborhood_map(u: int, Lambda: dict[int, int]) -> tuple[int, set]:
             '''
@@ -68,7 +67,7 @@ class AffinityClusteringMPC(Algorithm):
                  .reduceByKey(create_neighborhood_reduce) \
                  .collectAsMap()
 
-        print(f'Neighborhoods: {NG}')
+        print(f'Neighborhoods: {len(NG)}')
         
         def contract_neighborhood_map(leader: int, neighborhood: set, E: dict[tuple[int, int], int]) -> tuple[int, dict[tuple[int, int], int]]:
             '''
@@ -104,24 +103,26 @@ class AffinityClusteringMPC(Algorithm):
         def contract_neighborhood_reduce(a, b):
             keys = set(a.keys()) | set(b.keys())
             
-            result_dict = dict()
+            contracted_edges = dict()
             for edge in keys:
+                # sets contain the paired edges -> successful contraction.
                 if edge in a and edge in b:
                     (leader_a, weight) = a[edge]
                     (leader_b, weight) = b[edge]
-                    result_dict[edge_index(leader_a, leader_b)] = weight
+                    contracted_edges[edge_index(leader_a, leader_b)] = weight
+                # otherwise, store for next reduce step to contract.
                 elif edge in a:
-                    result_dict[edge] = a[edge]
+                    contracted_edges[edge] = a[edge]
                 else:
-                    result_dict[edge] = b[edge]
-            return result_dict
+                    contracted_edges[edge] = b[edge]
+            return contracted_edges
 
         if len(NG.keys()) > 1:
             contracted_graph = self.sc.parallelize(NG) \
                 .map(lambda leader: contract_neighborhood_map(leader, NG[leader], E)) \
                 .reduce(contract_neighborhood_reduce)
             
-            print(f'Contracted: {contracted_graph}')
+            print(f'Contracted: {len(contracted_graph)}')
 
             V = dict[int, set]()
             E = dict[tuple[int, int], int]()
@@ -155,7 +156,7 @@ class AffinityClusteringMPC(Algorithm):
                 self.print_graph()
             if self.plot_graph is not None and len(self.G.V) > 1:
                 self.plot_graph(i)
-            if len(self.G.V) <= 1:
+            if len(self.G.V) == 1:
                 break
         self.sc.stop()
         
