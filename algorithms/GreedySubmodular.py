@@ -8,10 +8,9 @@ def in_circle(center_x, center_y, radius, x, y):
     return dist <= radius
 
 class GreedySubmodular:
-    def __init__(self, coords_x, coords_y):
+    def __init__(self, sc, coords_x, coords_y):
         self.points = list(zip(coords_x, coords_y))
-        self.conf = SparkConf('local[*]').setAppName('GreedySubmodular')
-        self.sc = SparkContext.getOrCreate(conf=self.conf)
+        self.sc = sc
 
     def run(self, k: int, balls: list[tuple[int, int, int]]):
         # distribute points equally among machines V_j = { e_{j\sqrt{n}}, e_{(j\sqrt{n}) + 1}, \cdots, e_{(j\sqrt{n}) + \sqrt{n}} }
