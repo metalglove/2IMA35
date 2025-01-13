@@ -1,14 +1,14 @@
 # max coverage
 import math
 
-from pyspark import SparkConf, SparkContext
+from pyspark import SparkContext
 
 def in_circle(center_x, center_y, radius, x, y):
     dist = math.sqrt((center_x - x) ** 2 + (center_y - y) ** 2)
     return dist <= radius
 
 class GreedySubmodular:
-    def __init__(self, sc, coords_x, coords_y):
+    def __init__(self, sc: SparkContext, coords_x, coords_y):
         self.points = list(zip(coords_x, coords_y))
         self.sc = sc
 
@@ -38,7 +38,7 @@ class GreedySubmodular:
             # print(f'--{j}--')
             (value, max_ball) = max((f2(V_j, ball), ball) for ball in balls)
             (max_ball_coverage_value, points) = value
-            print(f'max_ball: {max_ball}, coverage: {points}')
+            #print(f'max_ball: {max_ball}, coverage: {points}')
             # print(f'M_j: {j}, max_ball: {max_ball}, coverage: {max_ball_coverage_value}')
             return max_ball, value
         
@@ -79,7 +79,7 @@ class GreedySubmodular:
                 .map(lambda c: c) \
                 .reduce(simple_reduce)
         
-            print(f'final max_ball: {max_ball}')
+            #print(f'final max_ball: {max_ball}')
             (ball, (val, points)) = max_ball
             # remove from V
             for p in points:

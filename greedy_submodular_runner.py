@@ -11,7 +11,7 @@ def main():
     # k
     k = 3
     minlim = 0
-    maxlim = 100
+    maxlim = 10_000
 
     def generate_dataset(size):
         # points
@@ -36,16 +36,22 @@ def main():
 
     timings = []
     # sizes = []
-    conf = SparkConf('local[]').setAppName('GreedySubmodular')
+    conf = SparkConf('local[]').setAppName('GreedySubmodular').set("spark.executor.memory", "4g").set("spark.driver.memory", "2g")
     sc = SparkContext.getOrCreate(conf=conf)
 
-    for i in range(50):
+    # initialze pyspark
+    balls = set[tuple[int, int, int]]([(100, 300, 400), (5000, 5000, 1000), (800, 300, 500), (2000, 300, 500), (2000, 7000, 500), (7000, 2000, 1000), (3000, 4000, 1500), (1000, 8000, 3000)])
+    coords_x, coords_y = generate_dataset(100)
+    alg = GreedySubmodular(sc, coords_x, coords_y)
+    O_balls, O_points = alg.run(k, balls)
+
+    for i in range(100):
         # x, y, r
-        balls = set[tuple[int, int, int]]([(1, 3, 4), (50, 50, 10), (8, 3, 5), (20, 3, 5), (20, 70, 5), (70, 20, 10), (30, 40, 15), (10, 80, 30)])
+        balls = set[tuple[int, int, int]]([(100, 300, 400), (5000, 5000, 1000), (800, 300, 500), (2000, 300, 500), (2000, 7000, 500), (7000, 2000, 1000), (3000, 4000, 1500), (1000, 8000, 3000)])
         num_balls = len(balls)
 
         i = i + 1
-        size = i * 500 
+        size = i * 1000 
         coords_x, coords_y = generate_dataset(size)
         # plot(balls, list(zip(coords_x, coords_y)), num_balls, size)
 
@@ -57,16 +63,19 @@ def main():
         timings.append({ 'size': size, 'timing': t1 - t0 })
         # timings.append(t1 - t0)
         # sizes.append(size)
-        print(f'timing = {t1 - t0}')
+        print(f'size = {size}, timing = {t1 - t0}')
 
         # plot(O_balls, O_points, num_balls, size)
     df = pd.DataFrame(timings)
-    df.to_csv('timings.csv')
+    df.to_csv('timings4.csv')
 
     # plot performance graph
     fig = plt.figure(figsize=(5, 5))
-
+    plt.title(f'Running time vs data set size')
     plt.plot(df['size'], df['timing'])
+    plt.xlabel('size')
+    plt.ylabel('seconds')
+    fig.savefig('performance.png')
 
     # show all figs
     plt.show(block = True)
