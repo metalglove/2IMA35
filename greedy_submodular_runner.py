@@ -39,15 +39,23 @@ def main():
     conf = SparkConf('local[]').setAppName('GreedySubmodular').set("spark.executor.memory", "4g").set("spark.driver.memory", "2g")
     sc = SparkContext.getOrCreate(conf=conf)
 
-    # initialze pyspark
+    # initialze pyspark (dry run)
     balls = set[tuple[int, int, int]]([(100, 300, 400), (5000, 5000, 1000), (800, 300, 500), (2000, 300, 500), (2000, 7000, 500), (7000, 2000, 1000), (3000, 4000, 1500), (1000, 8000, 3000)])
     coords_x, coords_y = generate_dataset(100)
     alg = GreedySubmodular(sc, coords_x, coords_y)
     O_balls, O_points = alg.run(k, balls)
 
+    balls_n = 50
+    ballss = set()
+    for i in range(balls_n):
+        x = np.random.randint(minlim, maxlim)
+        y = np.random.randint(minlim, maxlim)
+        r = np.random.randint(1, maxlim / 50)
+        balls.add((x, y, r))
+
     for i in range(100):
         # x, y, r
-        balls = set[tuple[int, int, int]]([(100, 300, 400), (5000, 5000, 1000), (800, 300, 500), (2000, 300, 500), (2000, 7000, 500), (7000, 2000, 1000), (3000, 4000, 1500), (1000, 8000, 3000)])
+        balls = ballss.copy()
         num_balls = len(balls)
 
         i = i + 1
@@ -61,8 +69,6 @@ def main():
         O_balls, O_points = alg.run(k, balls)
         t1 = time()
         timings.append({ 'size': size, 'timing': t1 - t0 })
-        # timings.append(t1 - t0)
-        # sizes.append(size)
         print(f'size = {size}, timing = {t1 - t0}')
 
         # plot(O_balls, O_points, num_balls, size)
