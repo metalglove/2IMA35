@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from pyspark import SparkConf, SparkContext
+from algorithms.GreedySubmodularV2 import GreedySubmodularV2
 from algorithms.GreedySubmodular import GreedySubmodular
 from time import time
 import findspark
@@ -42,7 +43,7 @@ def main():
     # initialze pyspark (dry run)
     balls = set[tuple[int, int, int]]([(100, 300, 400), (5000, 5000, 1000), (800, 300, 500), (2000, 300, 500), (2000, 7000, 500), (7000, 2000, 1000), (3000, 4000, 1500), (1000, 8000, 3000)])
     coords_x, coords_y = generate_dataset(100)
-    alg = GreedySubmodular(sc, coords_x, coords_y)
+    alg = GreedySubmodularV2(sc, coords_x, coords_y)
     O_balls, O_points = alg.run(k, balls)
 
     balls_n = 50
@@ -51,7 +52,7 @@ def main():
         x = np.random.randint(minlim, maxlim)
         y = np.random.randint(minlim, maxlim)
         r = np.random.randint(1, maxlim / 50)
-        balls.add((x, y, r))
+        ballss.add((x, y, r))
 
     for i in range(100):
         # x, y, r
@@ -64,7 +65,7 @@ def main():
         # plot(balls, list(zip(coords_x, coords_y)), num_balls, size)
 
         # algorithm
-        alg = GreedySubmodular(sc, coords_x, coords_y)
+        alg = GreedySubmodularV2(sc, coords_x, coords_y)
         t0 = time()
         O_balls, O_points = alg.run(k, balls)
         t1 = time()
@@ -73,7 +74,7 @@ def main():
 
         # plot(O_balls, O_points, num_balls, size)
     df = pd.DataFrame(timings)
-    df.to_csv('timings4.csv')
+    df.to_csv('timings_v2.csv')
 
     # plot performance graph
     fig = plt.figure(figsize=(5, 5))
@@ -81,7 +82,7 @@ def main():
     plt.plot(df['size'], df['timing'])
     plt.xlabel('size')
     plt.ylabel('seconds')
-    fig.savefig('performance.png')
+    fig.savefig('performancev2.png')
 
     # show all figs
     plt.show(block = True)
