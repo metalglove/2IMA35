@@ -54,38 +54,40 @@ def main():
         r = np.random.randint(1, maxlim / 50)
         ballss.add((x, y, r))
 
-    for i in range(100):
-        # x, y, r
-        balls = ballss.copy()
-        num_balls = len(balls)
+    ks = 10
+    for k in range(1, ks + 1):
+        for i in range(100):
+            # x, y, r
+            balls = ballss.copy()
+            num_balls = len(balls)
 
-        i = i + 1
-        size = i * 1000 
-        coords_x, coords_y = generate_dataset(size)
-        # plot(balls, list(zip(coords_x, coords_y)), num_balls, size)
+            i = i + 1
+            size = i * 1000 
+            coords_x, coords_y = generate_dataset(size)
 
-        # algorithm
-        alg = GreedySubmodularV2(sc, coords_x, coords_y)
-        t0 = time()
-        O_balls, O_points = alg.run(k, balls)
-        t1 = time()
-        timings.append({ 'size': size, 'timing': t1 - t0 })
-        print(f'size = {size}, timing = {t1 - t0}')
+            # algorithm
+            alg = GreedySubmodularV2(sc, coords_x, coords_y)
+            t0 = time()
+            _ = alg.run(k, balls)
+            t1 = time()
+            timings.append({ 'size': size, 'timing': t1 - t0, 'k': k })
+            print(f'k = {k}, size = {size}, timing = {t1 - t0}')
 
-        # plot(O_balls, O_points, num_balls, size)
     df = pd.DataFrame(timings)
-    df.to_csv('timings_v2.csv')
+    df.to_csv('timings_v2k.csv')
 
-    # plot performance graph
-    fig = plt.figure(figsize=(5, 5))
-    plt.title(f'Running time vs data set size')
-    plt.plot(df['size'], df['timing'])
-    plt.xlabel('size')
-    plt.ylabel('seconds')
-    fig.savefig('performancev2.png')
+    # colors = plt.get_cmap('viridis')(np.linspace(0, 1, ks))
+    # # plot performance graph
+    # fig = plt.figure(figsize=(5, 5))
+    # df['k'] = df['k'] - 1
+    # plt.title(f'Running time vs data set size')
+    # plt.plot(df['size'], df['timing'], c=colors[df['k']])
+    # plt.xlabel('size')
+    # plt.ylabel('seconds')
+    # fig.savefig('performancev2k.png')
 
-    # show all figs
-    plt.show(block = True)
+    # # show all figs
+    # plt.show(block = True)
 
 
 if __name__ == "__main__":
