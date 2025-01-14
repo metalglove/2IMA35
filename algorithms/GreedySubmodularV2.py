@@ -3,18 +3,17 @@ import math
 
 from pyspark import SparkContext
 
-def in_circle(center_x, center_y, radius, x, y):
-    dist = math.sqrt((center_x - x) ** 2 + (center_y - y) ** 2)
-    return dist <= radius
-
-class GreedySubmodular:
+class GreedySubmodularV2:
     def __init__(self, sc: SparkContext, coords_x, coords_y):
         self.points = list(zip(coords_x, coords_y))
         self.sc = sc
 
     def run(self, k: int, balls: list[tuple[int, int, int]]):
         # we define the oracle
-        problem = SetCoverProblemOracle(self.points, balls)
+        ball_dict = dict[int, tuple[int, int, int]]()
+        for idx, ball in enumerate(balls):
+            ball_dict[idx] = ball
+        problem = SetCoverProblemOracle(self.points, ball_dict)
 
         def find_max_ball_mapper1(C_j):
             (max_v, max_c_id) = max([(problem.f(c_id), c_id) for c_id in C_j])
@@ -28,14 +27,15 @@ class GreedySubmodular:
             return (max_b_id, max_b_v)
 
         for i in range(k):
-            n = len(problem.C)
+            print(f'round {i}')
+            n = len(problem.C.keys())
             j = math.ceil(math.sqrt(n))
 
             # prepare the ball ids in the number of machines (partitions)
-            ball_ids = self.sc.range(start=0, end=n, numSlices=j).glom()
+            ball_ids = self.sc.parallelize(problem.C.keys(), numSlices=j).glom()
 
             # map and reduce from each ball subset to the maximum ball
-            max_ball_id = ball_ids.map(find_max_ball_mapper1).reduce(find_max_ball_reducer1)
+            (max_ball_id, _) = ball_ids.map(find_max_ball_mapper1).reduce(find_max_ball_reducer1)
             
             # we are now machine M_$, assume we are running locally.
             problem.add(max_ball_id)
@@ -46,10 +46,7 @@ import abc
 
 class ProblemOracle(metaclass=abc.ABCMeta):
     def __init__(self, U: list):
-        self.__U = U
-
-    def get_universe(self) -> list:
-        return self.__U
+        self.U = U
 
     @abc.abstractmethod
     def fs(self, ids) -> int:
@@ -74,24 +71,24 @@ class ProblemOracle(metaclass=abc.ABCMeta):
     # -output: in our case, a list of representations of the circles
 
 class SetCoverProblemOracle(ProblemOracle):
-    def __init__(self, P: list[tuple[int, int]], C: list[tuple[int, int, int]]):
+    def __init__(self, P: list[tuple[int, int]], C: dict[int, tuple[int, int, int]]):
         super().__init__(P)
         self.C = C
         self.S = set()
         self.covered_points = set()
 
     def add(self, id):
-        (x_center, y_center, r) = self.C[id]
+        (x_center, y_center, r) = self.C.get(id)
         selected_points = set[tuple[int, int]]()
 
         # find points in universe
-        for (x, y) in self.get_universe():
+        for (x, y) in self.U:
             if self.__in_circle(x_center, y_center, r, x, y):
                 selected_points.add((x, y))
         
         # remove points from universe
         for point in selected_points:
-            self.get_universe().remove(point)
+            self.U.remove(point)
         
         # store all covered points
         self.covered_points = self.covered_points.union(selected_points)
@@ -106,9 +103,9 @@ class SetCoverProblemOracle(ProblemOracle):
         return sum([self.f(id) for id in ids])
     
     def f(self, id) -> int:
-        (x_center, y_center, r) = self.C[id]
+        (x_center, y_center, r) = self.C.get(id)
         i = 0
-        for (x, y) in self.get_universe():
+        for (x, y) in self.U:
             if self.__in_circle(x_center, y_center, r, x, y):
                 i += 1
         return i
