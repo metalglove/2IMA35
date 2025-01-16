@@ -50,7 +50,7 @@ def save_experiment(name, timings):
 
 def spark_dry_run(sc):
     balls = set[tuple[int, int, int]]([(100, 300, 400), (5000, 5000, 1000), (800, 300, 500), (2000, 300, 500), (2000, 7000, 500), (7000, 2000, 1000), (3000, 4000, 1500), (1000, 8000, 3000)])
-    coords_x, coords_y = generate_dataset(100)
+    coords_x, coords_y = generate_dataset(1000, 0, 10000)
     alg = GreedySubmodularV2(sc, coords_x, coords_y)
     _ = alg.run(3, balls)
 
@@ -67,7 +67,6 @@ def experiment1(sc):
     However, the size of the point set increases by 1000 points, 100 times.
     Furthermore, this is done k times.
     '''
-
     circles_n = 50
     minlim = 0
     maxlim = 10_000
@@ -78,13 +77,10 @@ def experiment1(sc):
     ks = 10
     for k in range(1, ks + 1):
         for i in range(100):
-            circles = circless.copy()
-
-            i = i + 1
-            size = i * 1000 
+            size = (i + 1) * 1000 
             coords_x, coords_y = generate_dataset(size)
 
-            timing = run_greedy_submodular(sc, coords_x, coords_y, k, circles)
+            timing = run_greedy_submodular(sc, coords_x, coords_y, k, circless)
 
             timings.append({ 'size': size, 'timing': timing, 'k': k })
             print(f'k = {k}, size = {size}, timing = {timing}')
@@ -95,12 +91,12 @@ def experiment2(sc):
     '''
     Experiment with constant number of points but increasing number of circles
     '''
-    k = 5
+    k = 15
     points_n = 10_000
     minlim = 0
     maxlim = 10_000
 
-    (coords_x, coords_y): tuple[list, list] = generate_dataset(points_n)
+    coords_x, coords_y = generate_dataset(points_n, minlim, maxlim)
     circless = generate_circles(k, minlim, maxlim)
 
     timings = []
@@ -124,7 +120,7 @@ def experiment3(sc):
     minlim = 0
     maxlim = 10_000
 
-    (coords_x, coords_y): tuple[list, list] = generate_dataset(points_n)
+    coords_x, coords_y = generate_dataset(points_n, minlim, maxlim)
     
     timings = []
     for i in range(k, 100):
@@ -146,7 +142,7 @@ def experiment4(sc):
     minlim = 0
     maxlim = 10_000
 
-    (coords_x, coords_y): tuple[list, list] = generate_dataset(points_n)
+    coords_x, coords_y = generate_dataset(points_n, minlim, maxlim)
     circless = generate_circles(k, minlim, maxlim)
 
     timings = []
@@ -169,7 +165,7 @@ def main():
     sc = SparkContext.getOrCreate(conf=conf)
 
     # initialze pyspark (dry run) to remove initialization overhead in performance comparisons
-    spark_dry_run()
+    spark_dry_run(sc)
 
     # timings = experiment1()
     # save_experiment('experiment1.csv', timings)
