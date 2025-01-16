@@ -153,6 +153,7 @@ def experiment4(sc):
     for i in range(50):
         if i > 0:
             coords_x, coords_y = augment_dataset(coords_x, coords_y, 5000, minlim, maxlim)
+            points_n = len(coords_x)
             circless.add(generate_circle(minlim, maxlim, maxlim / 50))
             
         timing = run_greedy_submodular(sc, coords_x, coords_y, k, circless)
