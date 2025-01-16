@@ -97,17 +97,19 @@ def experiment2(sc):
     maxlim = 10_000
 
     coords_x, coords_y = generate_dataset(points_n, minlim, maxlim)
-    circless = generate_circles(k, minlim, maxlim)
+    og_circless = generate_circles(k, minlim, maxlim)
 
     timings = []
-    for i in range(k, 100):
-        if i > k:
-            circless.add(generate_circle(minlim, maxlim, maxlim / 50))
+    for j in range(10):
+        circless = og_circless.copy()
+        for i in range(k, 100):
+            if i > k:
+                circless.add(generate_circle(minlim, maxlim, maxlim / 50))
 
-        timing = run_greedy_submodular(sc, coords_x, coords_y, k, circless)
+            timing = run_greedy_submodular(sc, coords_x, coords_y, k, circless)
 
-        timings.append({ 'size': points_n, 'timing': timing, 'k': k, 'circles': len(circless) })
-        print(f'k = {k}, size = {points_n}, timing = {timing}, circles = {len(circless)}')
+            timings.append({ 'size': points_n, 'timing': timing, 'k': k, 'circles': len(circless) })
+            print(f'[{j}] k = {k}, size = {points_n}, timing = {timing}, circles = {len(circless)}')
 
     return timings
 
@@ -123,13 +125,14 @@ def experiment3(sc):
     coords_x, coords_y = generate_dataset(points_n, minlim, maxlim)
     
     timings = []
-    for i in range(k, 100):
-        circless = generate_circles(i, minlim, maxlim)
+    for j in range(10):
+        for i in range(k, 100):
+            circless = generate_circles(i, minlim, maxlim)
 
-        timing = run_greedy_submodular(sc, coords_x, coords_y, k, circless)
+            timing = run_greedy_submodular(sc, coords_x, coords_y, k, circless)
 
-        timings.append({ 'size': points_n, 'timing': timing, 'k': k, 'circles': len(circless) })
-        print(f'k = {k}, size = {points_n}, timing = {timing}, circles = {len(circless)}')
+            timings.append({ 'size': points_n, 'timing': timing, 'k': k, 'circles': len(circless) })
+            print(f'[{j}] k = {k}, size = {points_n}, timing = {timing}, circles = {len(circless)}')
 
     return timings
 
@@ -137,25 +140,29 @@ def experiment4(sc):
     '''
     Experiment with number of points and circles increasing in a ratio of 5000:1 (lol)
     '''
-    k = 5
+    k = 15
     points_n = 10_000
     minlim = 0
     maxlim = 10_000
 
-    coords_x, coords_y = generate_dataset(points_n, minlim, maxlim)
-    circless = generate_circles(k, minlim, maxlim)
+    og_coords_x, og_coords_y = generate_dataset(points_n, minlim, maxlim)
+    og_circless = generate_circles(k, minlim, maxlim)
 
     timings = []
-    for i in range(50):
-        if i > 0:
-            coords_x, coords_y = augment_dataset(coords_x, coords_y, 5000, minlim, maxlim)
-            points_n = len(coords_x)
-            circless.add(generate_circle(minlim, maxlim, maxlim / 50))
-            
-        timing = run_greedy_submodular(sc, coords_x, coords_y, k, circless)
+    for j in range(10):
+        coords_x = og_coords_x.copy()
+        coords_y = og_coords_y.copy()
+        circless = og_circless.copy()
+        for i in range(50):
+            if i > 0:
+                coords_x, coords_y = augment_dataset(coords_x, coords_y, 5000, minlim, maxlim)
+                points_n = len(coords_x)
+                circless.add(generate_circle(minlim, maxlim, maxlim / 50))
+                
+            timing = run_greedy_submodular(sc, coords_x, coords_y, k, circless)
 
-        timings.append({ 'size': points_n, 'timing': timing, 'k': k, 'circles': len(circless) })
-        print(f'k = {k}, size = {points_n}, timing = {timing}, circles = {len(circless)}')
+            timings.append({ 'size': points_n, 'timing': timing, 'k': k, 'circles': len(circless) })
+            print(f'[{j}] k = {k}, size = {points_n}, timing = {timing}, circles = {len(circless)}')
 
     return timings
 
