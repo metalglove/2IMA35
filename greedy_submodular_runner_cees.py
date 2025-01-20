@@ -175,7 +175,7 @@ def experiment5(sc):
     circles_n = 50
     minlim = 0
     maxlim = 10_000
-    circless = generate_circles(circles_n, minlim, maxlim)
+    circless_og = generate_circles(circles_n, minlim, maxlim)
 
     timings = []
 
@@ -183,14 +183,17 @@ def experiment5(sc):
     size = 25000
     coords_x, coords_y = generate_dataset(size, minlim, maxlim)
     grow_factor = 1.2
+    
 
-    for i in range(1, ks + 1):
-        timing = run_greedy_submodular(sc, coords_x, coords_y, ks, circless)
+    for j in range(10):
+        circless = circless_og.copy()
+        for i in range(1, ks + 1):
+            timing = run_greedy_submodular(sc, coords_x, coords_y, ks, circless)
 
-        timings.append({ 'grow_factor': grow_factor, 'timing': timing, 'k': ks, 'i': i })
-        print(f'k = {ks}, size = {size}, timing = {timing}, i = {i}')
+            timings.append({ 'grow_factor': grow_factor, 'timing': timing, 'k': ks, 'i': i, 'j': j})
+            print(f'k = {ks}, size = {size}, timing = {timing}, i = {i}, j = {j}')
 
-        circless = {(x, y, r * grow_factor) for (x, y, r) in circless}
+            circless = {(x, y, r * grow_factor) for (x, y, r) in circless}
 
     return timings
 
