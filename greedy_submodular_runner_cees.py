@@ -211,15 +211,15 @@ def experiment6(sc):
     increase_factor = 5000
     ks = 10
     size = 25000
-    coords_x, coords_y = generate_dataset(size, minlim, maxlim)
 
 
     for j in range(10):
+        coords_x, coords_y = generate_dataset(size, minlim, maxlim)
         for i in range(1, ks + 1):
-            timing = run_greedy_submodular(sc, coords_x, coords_y, ks, circless)
+            timing, cp = run_greedy_submodular(sc, coords_x, coords_y, ks, circless)
 
             currentSize = size + (i - 1) * increase_factor
-            timings.append({ 'increase_factor': increase_factor, 'timing': timing, 'k': ks, 'i': i, 'j': j})
+            timings.append({ 'currentSize': currentSize, 'timing': timing, 'k': ks, 'i': i, 'cp': len(cp)})
             print(f'k = {ks}, size = {currentSize}, timing = {timing}, i = {i}, j = {j}')
 
             coords_x, coords_y = generate_dataset(currentSize, minlim, maxlim)
@@ -234,8 +234,8 @@ def main():
     # initialze pyspark (dry run) to remove initialization overhead in performance comparisons
     spark_dry_run(sc)
 
-    timings = experiment5(sc)
-    save_experiment('experiment5.csv', timings)
+    # timings = experiment5(sc)
+    # save_experiment('experiment5.csv', timings)
 
     timings2 = experiment6(sc)
     save_experiment('experiment6.csv', timings2)
