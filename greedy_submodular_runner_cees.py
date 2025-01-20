@@ -183,7 +183,7 @@ def experiment5(sc):
     size = 25000
     coords_x, coords_y = generate_dataset(size, minlim, maxlim)
     grow_factor = 1.2
-    
+
 
     for j in range(10):
         circless = circless_og.copy()
@@ -197,6 +197,37 @@ def experiment5(sc):
 
     return timings
 
+def experiment6(sc):
+    '''
+    Experiment with a constant circles set with varying positions and sizes.
+    However, the size of the point set increases by 1000 points, 100 times.
+    Furthermore, this is done k times.
+    '''
+    circles_n = 50
+    minlim = 0
+    maxlim = 10_000
+    circless = generate_circles(circles_n, minlim, maxlim)
+
+    timings = []
+
+    increase_factor = 5000
+    ks = 10
+    size = 25000
+    coords_x, coords_y = generate_dataset(size, minlim, maxlim)
+
+
+    for j in range(10):
+        for i in range(1, ks + 1):
+            timing = run_greedy_submodular(sc, coords_x, coords_y, ks, circless)
+
+            currentSize = size + (i - 1) * increase_factor
+            timings.append({ 'increase_factor': increase_factor, 'timing': timing, 'k': ks, 'i': i, 'j': j})
+            print(f'k = {ks}, size = {currentSize}, timing = {timing}, i = {i}, j = {j}')
+
+            coords_x, coords_y = generate_dataset(currentSize, minlim, maxlim)
+
+    return timings
+
 def main():
     timings = []
     conf = SparkConf('local[]').setAppName('GreedySubmodular').set("spark.executor.memory", "4g").set("spark.driver.memory", "2g")
@@ -207,6 +238,9 @@ def main():
 
     timings = experiment5(sc)
     save_experiment('experiment5.csv', timings)
+
+    timings2 = experiment6(sc)
+    save_experiment('experiment6.csv', timings2)
 
 if __name__ == "__main__":
     np.random.seed(5128095)
