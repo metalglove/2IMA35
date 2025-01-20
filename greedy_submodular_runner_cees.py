@@ -31,7 +31,7 @@ def generate_circle(minlim, maxlim, maxradius):
 def generate_circles(circles_n, minlim, maxlim):
     circless = set()
     for i in range(circles_n):
-        circle = generate_circle(minlim, maxlim, maxlim / 50)
+        circle = generate_circle(minlim, maxlim, maxlim / 10)
         circless.add(circle)
     return circless
 
@@ -57,9 +57,9 @@ def spark_dry_run(sc):
 def run_greedy_submodular(sc, coords_x, coords_y, k, circles):
     alg = GreedySubmodularV2(sc, coords_x.copy(), coords_y.copy())
     t0 = time()
-    _ = alg.run(k, circles.copy())
+    S, cp = alg.run(k, circles.copy())
     t1 = time()
-    return t1 - t0
+    return t1 - t0, cp
 
 def experiment1(sc):
     '''
@@ -168,9 +168,7 @@ def experiment4(sc):
 
 def experiment5(sc):
     '''
-    Experiment with a constant circles set with varying positions and sizes.
-    However, the size of the point set increases by 1000 points, 100 times.
-    Furthermore, this is done k times.
+    Experiment 5
     '''
     circles_n = 50
     minlim = 0
@@ -180,7 +178,7 @@ def experiment5(sc):
     timings = []
 
     ks = 10
-    size = 25000
+    size = 50000
     coords_x, coords_y = generate_dataset(size, minlim, maxlim)
     grow_factor = 1.2
     
@@ -188,10 +186,10 @@ def experiment5(sc):
     for j in range(10):
         circless = circless_og.copy()
         for i in range(1, ks + 1):
-            timing = run_greedy_submodular(sc, coords_x, coords_y, ks, circless)
+            timing, cp = run_greedy_submodular(sc, coords_x, coords_y, ks, circless)
 
-            timings.append({ 'grow_factor': grow_factor, 'timing': timing, 'k': ks, 'i': i, 'j': j})
-            print(f'k = {ks}, size = {size}, timing = {timing}, i = {i}, j = {j}')
+            timings.append({ 'grow_factor': grow_factor, 'timing': timing, 'k': ks, 'i': i, 'covered_points': len(cp) })
+            print(f'k = {ks}, size = {size}, timing = {timing}, i = {i}, covered_points: {len(cp)}')
 
             circless = {(x, y, r * grow_factor) for (x, y, r) in circless}
 
